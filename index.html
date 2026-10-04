@@ -2,38 +2,124 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
   <title>Henry's Movie Frame</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
   <main id="display">
-    <div class="background" id="background"></div>
-    <div class="shade"></div>
+    <div id="backgroundImage" class="background-image"></div>
+    <div class="background-overlay"></div>
 
-    <section class="content">
-      <div class="poster-wrap">
-        <img id="poster" class="poster" alt="Movie poster">
-      </div>
+    <div id="slideRoot"></div>
 
-      <div class="info">
-        <p class="label">LATEST WATCH</p>
+    <div id="playStateIcon" class="play-state-icon hidden">
+      ⏸
+    </div>
 
-        <h1 id="title">Loading...</h1>
-
-        <p id="year" class="year"></p>
-
-        <div id="rating" class="rating"></div>
-
-        <p id="date" class="date"></p>
-
-        <div class="letterboxd">
-          LETTERBOXD
-        </div>
-      </div>
-    </section>
+    <div id="secretButton"></div>
   </main>
+
+  <div id="settingsPanel" class="settings-panel hidden">
+    <div class="settings-box">
+      <div class="settings-header">
+        <h2>Frame Settings</h2>
+        <button id="closeSettings" class="close-button">×</button>
+      </div>
+
+      <section class="settings-section">
+        <h3>Slideshow Modes</h3>
+
+        <label class="toggle-row">
+          <span>Latest Watch</span>
+          <input type="checkbox" data-mode="latest">
+        </label>
+
+        <label class="toggle-row">
+          <span>Random Movie</span>
+          <input type="checkbox" data-mode="random">
+        </label>
+
+        <label class="toggle-row">
+          <span>Facts</span>
+          <input type="checkbox" data-mode="facts">
+        </label>
+
+        <label class="toggle-row">
+          <span>Top Rated</span>
+          <input type="checkbox" data-mode="topRated">
+        </label>
+
+        <label class="toggle-row">
+          <span>Recently Watched</span>
+          <input type="checkbox" data-mode="recent">
+        </label>
+
+        <label class="toggle-row">
+          <span>Favorites</span>
+          <input type="checkbox" data-mode="favorites">
+        </label>
+      </section>
+
+      <section class="settings-section">
+        <h3>Background</h3>
+
+        <div class="color-setting">
+          <input
+            id="backgroundColor"
+            type="color"
+            value="#0b1117"
+          >
+
+          <span id="backgroundColorValue">
+            #0B1117
+          </span>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <div class="slider-title">
+          <h3>Brightness</h3>
+          <span id="brightnessValue">100%</span>
+        </div>
+
+        <input
+          id="brightnessSlider"
+          type="range"
+          min="20"
+          max="100"
+          step="5"
+          value="100"
+        >
+      </section>
+
+      <section class="settings-section">
+        <h3>Slide Time</h3>
+
+        <select id="slideDuration">
+          <option value="10000">10 seconds</option>
+          <option value="15000">15 seconds</option>
+          <option value="20000">20 seconds</option>
+          <option value="30000">30 seconds</option>
+          <option value="60000">1 minute</option>
+        </select>
+      </section>
+
+      <section class="settings-actions">
+        <button id="resetSettings" class="secondary-button">
+          Reset Settings
+        </button>
+
+        <button id="saveSettings" class="primary-button">
+          Save
+        </button>
+      </section>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>
