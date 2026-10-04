@@ -677,6 +677,4 @@ loadData();
 setInterval(
   loadData,
   5 * 60 * 1000
-);git add .
-git commit -m "Fix script rendering"
-git push
+);
