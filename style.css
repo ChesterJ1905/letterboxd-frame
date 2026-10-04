@@ -1,0 +1,122 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #050505;
+  font-family: Arial, Helvetica, sans-serif;
+  color: white;
+}
+
+#display {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.background {
+  position: absolute;
+  inset: -30px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(25px);
+  transform: scale(1.1);
+  opacity: 0.35;
+}
+
+.shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.93) 0%,
+      rgba(0, 0, 0, 0.75) 45%,
+      rgba(0, 0, 0, 0.35) 100%
+    );
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+
+  padding: 55px 75px;
+  gap: 70px;
+}
+
+.poster-wrap {
+  height: 90%;
+  aspect-ratio: 2 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.poster {
+  max-height: 100%;
+  max-width: 100%;
+  border-radius: 12px;
+
+  box-shadow:
+    0 25px 70px rgba(0, 0, 0, 0.8);
+
+  object-fit: cover;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.label {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 5px;
+  margin: 0 0 18px;
+  opacity: 0.7;
+}
+
+h1 {
+  font-size: 68px;
+  line-height: 0.95;
+  margin: 0;
+  max-width: 700px;
+}
+
+.year {
+  font-size: 25px;
+  margin-top: 18px;
+  opacity: 0.65;
+}
+
+.rating {
+  font-size: 42px;
+  margin-top: 32px;
+  letter-spacing: 3px;
+}
+
+.date {
+  margin-top: 20px;
+  font-size: 22px;
+  opacity: 0.7;
+}
+
+.letterboxd {
+  margin-top: 50px;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  opacity: 0.45;
+}
