@@ -297,16 +297,18 @@ input {
 
 #secretButton {
   position: fixed;
+  left: 0;
+  top: 0;
 
-  right: 0;
-  bottom: 0;
-
-  width: 105px;
-  height: 105px;
+  width: 100px;
+  height: 100px;
 
   z-index: 300;
 
   background: transparent;
+
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .settings-panel {
