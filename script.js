@@ -1,3 +1,5 @@
+const BUILD_NUMBER = "2026.10.06.2";
+
 const DEFAULT_SETTINGS = {
   modes: {
     latest: true,
@@ -36,9 +38,6 @@ const backgroundImage =
 const settingsPanel =
   document.getElementById("settingsPanel");
 
-const secretButton =
-  document.getElementById("secretButton");
-
 const playStateIcon =
   document.getElementById("playStateIcon");
 
@@ -56,6 +55,9 @@ const brightnessValue =
 
 const slideDuration =
   document.getElementById("slideDuration");
+
+const buildNumber =
+  document.getElementById("buildNumber");
 
 async function loadData() {
   try {
@@ -157,7 +159,9 @@ function buildSlideQueue() {
     });
   }
 
-  if (settings.modes.facts) {
+  if (
+    settings.modes.facts
+  ) {
     slideQueue.push({
       type: "facts"
     });
@@ -201,13 +205,16 @@ function buildSlideQueue() {
     data.yearLists
   ) {
     const years =
-      Object.keys(data.yearLists)
-        .sort(
-          (a, b) =>
-            Number(b) - Number(a)
-        );
+      Object.keys(
+        data.yearLists
+      ).sort(
+        (a, b) =>
+          Number(b) - Number(a)
+      );
 
-    for (const year of years) {
+    for (
+      const year of years
+    ) {
       slideQueue.push({
         type: "yearList",
         year
@@ -223,7 +230,9 @@ function buildSlideQueue() {
 }
 
 function showSlide(index) {
-  clearTimeout(slideTimer);
+  clearTimeout(
+    slideTimer
+  );
 
   if (!slideQueue.length) {
     return;
@@ -286,7 +295,9 @@ function showSlide(index) {
 }
 
 function scheduleNextSlide() {
-  clearTimeout(slideTimer);
+  clearTimeout(
+    slideTimer
+  );
 
   slideTimer =
     setTimeout(
@@ -569,7 +580,9 @@ function renderFavorites() {
   `;
 }
 
-function renderYearList(year) {
+function renderYearList(
+  year
+) {
   setBackgroundImage("");
 
   const movies =
@@ -645,39 +658,47 @@ function renderYearList(year) {
   `;
 }
 
-function renderEmpty(message) {
+function renderEmpty(
+  message
+) {
   setBackgroundImage("");
 
   slideRoot.innerHTML = `
     <section class="empty-slide">
       <div>
         <h1>
-          ${escapeHTML(message)}
+          ${escapeHTML(
+            message
+          )}
         </h1>
       </div>
     </section>
   `;
 }
 
-function showError(message) {
+function showError(
+  message
+) {
   renderEmpty(message);
 }
 
-function setBackgroundImage(url) {
+function setBackgroundImage(
+  url
+) {
   if (!url) {
-    backgroundImage.style
-      .backgroundImage =
+    backgroundImage.style.backgroundImage =
       "none";
 
     return;
   }
 
-  backgroundImage.style
-    .backgroundImage =
+  backgroundImage.style.backgroundImage =
     `url("${url}")`;
 }
 
-function makeStars(rating) {
+function makeStars(
+  rating
+) {
   if (
     rating === null ||
     rating === undefined ||
@@ -710,15 +731,14 @@ function formatDate(
         `${dateString}T12:00:00`
       );
 
-    return date
-      .toLocaleDateString(
-        "en-US",
-        {
-          month: "long",
-          day: "numeric",
-          year: "numeric"
-        }
-      );
+    return date.toLocaleDateString(
+      "en-US",
+      {
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+      }
+    );
 
   } catch {
     return dateString;
@@ -729,11 +749,26 @@ function escapeHTML(
   value = ""
 ) {
   return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 }
 
 function escapeAttribute(
@@ -762,6 +797,7 @@ function togglePause() {
       "⏸",
       false
     );
+
   } else {
     showPlayStateIcon(
       "▶",
@@ -853,6 +889,9 @@ function populateSettingsUI() {
     String(
       settings.slideDuration
     );
+
+  buildNumber.textContent =
+    BUILD_NUMBER;
 }
 
 function readSettingsFromUI() {
@@ -917,10 +956,8 @@ backgroundColorInput
   .addEventListener(
     "input",
     () => {
-      backgroundColorValue
-        .textContent =
-        backgroundColorInput
-          .value
+      backgroundColorValue.textContent =
+        backgroundColorInput.value
           .toUpperCase();
     }
   );
@@ -929,8 +966,7 @@ brightnessSlider
   .addEventListener(
     "input",
     () => {
-      brightnessValue
-        .textContent =
+      brightnessValue.textContent =
         `${brightnessSlider.value}%`;
     }
   );
@@ -981,68 +1017,88 @@ document
     }
   );
 
-secretButton
+document
+  .getElementById("display")
   .addEventListener(
     "pointerup",
     event => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      secretTapCount++;
-
-      clearTimeout(
-        secretTapTimer
-      );
-
       if (
-        secretTapCount >= 5
+        !settingsPanel
+          .classList
+          .contains("hidden")
       ) {
-        secretTapCount = 0;
+        return;
+      }
+
+      const secretWidth = 250;
+      const secretHeight = 250;
+
+      const inBottomRight =
+        event.clientX >=
+          window.innerWidth -
+          secretWidth &&
+        event.clientY >=
+          window.innerHeight -
+          secretHeight;
+
+      if (inBottomRight) {
+        event.preventDefault();
+
+        secretTapCount++;
 
         clearTimeout(
           secretTapTimer
         );
 
-        openSettings();
+        if (
+          secretTapCount >= 5
+        ) {
+          secretTapCount = 0;
+
+          clearTimeout(
+            secretTapTimer
+          );
+
+          openSettings();
+
+          return;
+        }
+
+        secretTapTimer =
+          setTimeout(
+            () => {
+              secretTapCount = 0;
+            },
+            3500
+          );
 
         return;
       }
 
-      secretTapTimer =
-        setTimeout(
-          () => {
-            secretTapCount = 0;
-          },
-          3000
-        );
-    }
-  );
+      secretTapCount = 0;
 
-secretButton
-  .addEventListener(
-    "contextmenu",
-    event => {
-      event.preventDefault();
-    }
-  );
-
-document
-  .getElementById("display")
-  .addEventListener(
-    "click",
-    event => {
-      if (
-        event.target ===
-        secretButton
-      ) {
-        return;
-      }
+      clearTimeout(
+        secretTapTimer
+      );
 
       togglePause();
     }
   );
 
+document.addEventListener(
+  "contextmenu",
+  event => {
+    event.preventDefault();
+  }
+);
+
+if (buildNumber) {
+  buildNumber.textContent =
+    BUILD_NUMBER;
+}
+
 applyVisualSettings();
+
 loadData();
 
 setInterval(

@@ -23,8 +23,6 @@
     <div id="playStateIcon" class="play-state-icon hidden">
       ⏸
     </div>
-
-    <div id="secretButton" aria-hidden="true"></div>
   </main>
 
   <div id="settingsPanel" class="settings-panel hidden">
@@ -99,7 +97,10 @@
       <section class="settings-section">
         <div class="slider-title">
           <h3>Brightness</h3>
-          <span id="brightnessValue">100%</span>
+
+          <span id="brightnessValue">
+            100%
+          </span>
         </div>
 
         <input
@@ -122,6 +123,11 @@
           <option value="30000">30 seconds</option>
           <option value="60000">1 minute</option>
         </select>
+      </section>
+
+      <section class="settings-section build-section">
+        <span>Build</span>
+        <span id="buildNumber">—</span>
       </section>
 
       <section class="settings-actions">

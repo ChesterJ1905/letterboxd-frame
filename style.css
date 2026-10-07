@@ -29,6 +29,8 @@ body {
   -webkit-user-select: none;
 
   overscroll-behavior: none;
+
+  touch-action: manipulation;
 }
 
 button,
@@ -52,6 +54,8 @@ input {
     brightness(
       var(--frame-brightness)
     );
+
+  touch-action: manipulation;
 }
 
 .background-image {
@@ -86,6 +90,8 @@ input {
       rgba(0, 0, 0, 0.62) 48%,
       rgba(0, 0, 0, 0.35) 100%
     );
+
+  pointer-events: none;
 }
 
 #slideRoot {
@@ -95,6 +101,8 @@ input {
 
   width: 100%;
   height: 100%;
+
+  pointer-events: none;
 }
 
 .movie-slide {
@@ -147,6 +155,7 @@ input {
     0 0 18px;
 
   font-size: 17px;
+
   font-weight: 700;
 
   letter-spacing: 5px;
@@ -205,7 +214,8 @@ input {
 
   opacity: 0.88;
 
-  display: -webkit-box;
+  display:
+    -webkit-box;
 
   -webkit-line-clamp: 5;
 
@@ -482,12 +492,6 @@ input {
   font-size: 48px;
 }
 
-.empty-slide p {
-  font-size: 22px;
-
-  opacity: 0.6;
-}
-
 .play-state-icon {
   position: fixed;
 
@@ -522,35 +526,12 @@ input {
   transition:
     opacity
     0.25s ease;
-}
-
-.play-state-icon.hidden {
-  opacity: 0;
 
   pointer-events: none;
 }
 
-#secretButton {
-  position: fixed;
-
-  left: 0;
-  top: 0;
-
-  width: 180px;
-  height: 180px;
-
-  z-index: 999;
-
-  background:
-    transparent;
-
-  -webkit-tap-highlight-color:
-    transparent;
-
-  touch-action: none;
-
-  user-select: none;
-  -webkit-user-select: none;
+.play-state-icon.hidden {
+  opacity: 0;
 }
 
 .settings-panel {
@@ -575,6 +556,8 @@ input {
 
   backdrop-filter:
     blur(12px);
+
+  touch-action: auto;
 }
 
 .settings-panel.hidden {
@@ -597,6 +580,8 @@ input {
   box-shadow:
     0 30px 100px
     rgba(0, 0, 0, 0.75);
+
+  touch-action: auto;
 }
 
 .settings-header {
@@ -730,6 +715,26 @@ input {
   color: white;
 
   font-size: 19px;
+}
+
+.build-section {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  align-items: center;
+
+  font-size: 15px;
+
+  opacity: 0.6;
+}
+
+#buildNumber {
+  font-family:
+    monospace;
+
+  font-weight: 700;
 }
 
 .settings-actions {
