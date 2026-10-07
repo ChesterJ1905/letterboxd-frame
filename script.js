@@ -771,17 +771,20 @@ function showPlayStateIcon(
 function openSettings() {
   clearTimeout(slideTimer);
 
-  settingsPanel
-    .classList
-    .remove("hidden");
+  settingsPanel.classList.remove("hidden");
+
+  settingsPanel.style.display = "flex";
+  settingsPanel.style.visibility = "visible";
+  settingsPanel.style.opacity = "1";
+  settingsPanel.style.zIndex = "2147483647";
 
   populateSettingsUI();
 }
 
 function closeSettings() {
-  settingsPanel
-    .classList
-    .add("hidden");
+  settingsPanel.classList.add("hidden");
+
+  settingsPanel.style.display = "none";
 
   if (!paused) {
     scheduleNextSlide();
