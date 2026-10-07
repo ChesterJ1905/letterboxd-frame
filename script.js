@@ -1,4 +1,4 @@
-const BUILD_NUMBER = "2026.10.07.4";
+const BUILD_NUMBER = "2026.10.07.5";
 
 const DEFAULT_SETTINGS = {
   modes: {
