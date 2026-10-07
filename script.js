@@ -1,4 +1,4 @@
-const BUILD_NUMBER = "2026.10.07.2";
+const BUILD_NUMBER = "2026.10.07.3";
 
 const DEFAULT_SETTINGS = {
   modes: {
@@ -58,6 +58,9 @@ const slideDuration =
 
 const buildNumber =
   document.getElementById("buildNumber");
+
+const homeBuildNumber =
+  document.getElementById("homeBuildNumber");
 
 async function loadData() {
   try {
@@ -159,9 +162,7 @@ function buildSlideQueue() {
     });
   }
 
-  if (
-    settings.modes.facts
-  ) {
+  if (settings.modes.facts) {
     slideQueue.push({
       type: "facts"
     });
@@ -192,9 +193,7 @@ function buildSlideQueue() {
     });
   }
 
-  if (
-    settings.modes.favorites
-  ) {
+  if (settings.modes.favorites) {
     slideQueue.push({
       type: "favorites"
     });
@@ -734,9 +733,7 @@ function togglePause() {
 
   paused = !paused;
 
-  clearTimeout(
-    slideTimer
-  );
+  clearTimeout(slideTimer);
 
   if (paused) {
     showPlayStateIcon(
@@ -758,9 +755,7 @@ function showPlayStateIcon(
   icon,
   autoHide
 ) {
-  clearTimeout(
-    iconTimer
-  );
+  clearTimeout(iconTimer);
 
   playStateIcon.textContent =
     icon;
@@ -956,12 +951,20 @@ document
   );
 
 settingsHotspot.addEventListener(
-  "click",
+  "pointerup",
   event => {
     event.preventDefault();
     event.stopPropagation();
 
     openSettings();
+  }
+);
+
+settingsHotspot.addEventListener(
+  "click",
+  event => {
+    event.preventDefault();
+    event.stopPropagation();
   }
 );
 
@@ -988,30 +991,17 @@ document.addEventListener(
   }
 );
 
-if (buildNumber) {
-  buildNumber.textContent =
-    BUILD_NUMBER;
-}
+buildNumber.textContent =
+  BUILD_NUMBER;
+
+homeBuildNumber.textContent =
+  `Build ${BUILD_NUMBER}`;
 
 applyVisualSettings();
+
 loadData();
 
 setInterval(
   loadData,
   5 * 60 * 1000
 );
-const debugSize = document.createElement("div");
-
-debugSize.style.position = "fixed";
-debugSize.style.bottom = "10px";
-debugSize.style.left = "10px";
-debugSize.style.zIndex = "99999";
-debugSize.style.background = "white";
-debugSize.style.color = "white";
-debugSize.style.padding = "8px";
-debugSize.style.fontSize = "18px";
-
-debugSize.textContent =
-  `${window.innerWidth} × ${window.innerHeight}`;
-
-document.body.appendChild(debugSize);
