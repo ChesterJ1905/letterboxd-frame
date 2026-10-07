@@ -1,4 +1,4 @@
-const BUILD_NUMBER = "2026.10.06.2";
+const BUILD_NUMBER = "2026.10.07.1";
 
 const DEFAULT_SETTINGS = {
   modes: {
@@ -26,8 +26,9 @@ let paused = false;
 let slideTimer = null;
 let iconTimer = null;
 
-let secretTapCount = 0;
-let secretTapTimer = null;
+let gestureTracking = false;
+let gestureStartX = 0;
+let gestureStartY = 0;
 
 const slideRoot =
   document.getElementById("slideRoot");
@@ -58,6 +59,9 @@ const slideDuration =
 
 const buildNumber =
   document.getElementById("buildNumber");
+
+const display =
+  document.getElementById("display");
 
 async function loadData() {
   try {
@@ -159,9 +163,7 @@ function buildSlideQueue() {
     });
   }
 
-  if (
-    settings.modes.facts
-  ) {
+  if (settings.modes.facts) {
     slideQueue.push({
       type: "facts"
     });
@@ -192,9 +194,7 @@ function buildSlideQueue() {
     });
   }
 
-  if (
-    settings.modes.favorites
-  ) {
+  if (settings.modes.favorites) {
     slideQueue.push({
       type: "favorites"
     });
@@ -212,9 +212,7 @@ function buildSlideQueue() {
           Number(b) - Number(a)
       );
 
-    for (
-      const year of years
-    ) {
+    for (const year of years) {
       slideQueue.push({
         type: "yearList",
         year
@@ -230,17 +228,14 @@ function buildSlideQueue() {
 }
 
 function showSlide(index) {
-  clearTimeout(
-    slideTimer
-  );
+  clearTimeout(slideTimer);
 
   if (!slideQueue.length) {
     return;
   }
 
   slideIndex =
-    index %
-    slideQueue.length;
+    index % slideQueue.length;
 
   const slide =
     slideQueue[slideIndex];
@@ -295,19 +290,16 @@ function showSlide(index) {
 }
 
 function scheduleNextSlide() {
-  clearTimeout(
-    slideTimer
-  );
+  clearTimeout(slideTimer);
 
-  slideTimer =
-    setTimeout(
-      () => {
-        showSlide(
-          slideIndex + 1
-        );
-      },
-      settings.slideDuration
-    );
+  slideTimer = setTimeout(
+    () => {
+      showSlide(
+        slideIndex + 1
+      );
+    },
+    settings.slideDuration
+  );
 }
 
 function pickRandomMovie() {
@@ -580,9 +572,7 @@ function renderFavorites() {
   `;
 }
 
-function renderYearList(
-  year
-) {
+function renderYearList(year) {
   setBackgroundImage("");
 
   const movies =
@@ -658,33 +648,25 @@ function renderYearList(
   `;
 }
 
-function renderEmpty(
-  message
-) {
+function renderEmpty(message) {
   setBackgroundImage("");
 
   slideRoot.innerHTML = `
     <section class="empty-slide">
       <div>
         <h1>
-          ${escapeHTML(
-            message
-          )}
+          ${escapeHTML(message)}
         </h1>
       </div>
     </section>
   `;
 }
 
-function showError(
-  message
-) {
+function showError(message) {
   renderEmpty(message);
 }
 
-function setBackgroundImage(
-  url
-) {
+function setBackgroundImage(url) {
   if (!url) {
     backgroundImage.style.backgroundImage =
       "none";
@@ -696,9 +678,7 @@ function setBackgroundImage(
     `url("${url}")`;
 }
 
-function makeStars(
-  rating
-) {
+function makeStars(rating) {
   if (
     rating === null ||
     rating === undefined ||
@@ -731,14 +711,15 @@ function formatDate(
         `${dateString}T12:00:00`
       );
 
-    return date.toLocaleDateString(
-      "en-US",
-      {
-        month: "long",
-        day: "numeric",
-        year: "numeric"
-      }
-    );
+    return date
+      .toLocaleDateString(
+        "en-US",
+        {
+          month: "long",
+          day: "numeric",
+          year: "numeric"
+        }
+      );
 
   } catch {
     return dateString;
@@ -749,26 +730,11 @@ function escapeHTML(
   value = ""
 ) {
   return String(value)
-    .replace(
-      /&/g,
-      "&amp;"
-    )
-    .replace(
-      /</g,
-      "&lt;"
-    )
-    .replace(
-      />/g,
-      "&gt;"
-    )
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-    .replace(
-      /'/g,
-      "&#039;"
-    );
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function escapeAttribute(
@@ -840,6 +806,8 @@ function openSettings() {
   clearTimeout(
     slideTimer
   );
+
+  gestureTracking = false;
 
   settingsPanel
     .classList
@@ -972,9 +940,7 @@ brightnessSlider
   );
 
 document
-  .getElementById(
-    "saveSettings"
-  )
+  .getElementById("saveSettings")
   .addEventListener(
     "click",
     () => {
@@ -984,18 +950,14 @@ document
   );
 
 document
-  .getElementById(
-    "closeSettings"
-  )
+  .getElementById("closeSettings")
   .addEventListener(
     "click",
     closeSettings
   );
 
 document
-  .getElementById(
-    "resetSettings"
-  )
+  .getElementById("resetSettings")
   .addEventListener(
     "click",
     () => {
@@ -1017,73 +979,110 @@ document
     }
   );
 
-document
-  .getElementById("display")
-  .addEventListener(
-    "pointerup",
-    event => {
-      if (
-        !settingsPanel
-          .classList
-          .contains("hidden")
-      ) {
-        return;
-      }
-
-      const secretWidth = 250;
-      const secretHeight = 250;
-
-      const inBottomRight =
-        event.clientX >=
-          window.innerWidth -
-          secretWidth &&
-        event.clientY >=
-          window.innerHeight -
-          secretHeight;
-
-      if (inBottomRight) {
-        event.preventDefault();
-
-        secretTapCount++;
-
-        clearTimeout(
-          secretTapTimer
-        );
-
-        if (
-          secretTapCount >= 5
-        ) {
-          secretTapCount = 0;
-
-          clearTimeout(
-            secretTapTimer
-          );
-
-          openSettings();
-
-          return;
-        }
-
-        secretTapTimer =
-          setTimeout(
-            () => {
-              secretTapCount = 0;
-            },
-            3500
-          );
-
-        return;
-      }
-
-      secretTapCount = 0;
-
-      clearTimeout(
-        secretTapTimer
-      );
-
-      togglePause();
+display.addEventListener(
+  "pointerdown",
+  event => {
+    if (
+      !settingsPanel
+        .classList
+        .contains("hidden")
+    ) {
+      return;
     }
-  );
+
+    const startZone = 300;
+
+    const inBottomRight =
+      event.clientX >=
+        window.innerWidth -
+        startZone &&
+      event.clientY >=
+        window.innerHeight -
+        startZone;
+
+    if (!inBottomRight) {
+      gestureTracking = false;
+      return;
+    }
+
+    gestureStartX =
+      event.clientX;
+
+    gestureStartY =
+      event.clientY;
+
+    gestureTracking =
+      true;
+
+    if (
+      display.setPointerCapture
+    ) {
+      try {
+        display.setPointerCapture(
+          event.pointerId
+        );
+      } catch {
+      }
+    }
+  }
+);
+
+display.addEventListener(
+  "pointerup",
+  event => {
+    if (
+      !settingsPanel
+        .classList
+        .contains("hidden")
+    ) {
+      return;
+    }
+
+    if (
+      !gestureTracking
+    ) {
+      togglePause();
+      return;
+    }
+
+    const deltaX =
+      event.clientX -
+      gestureStartX;
+
+    const deltaY =
+      event.clientY -
+      gestureStartY;
+
+    gestureTracking =
+      false;
+
+    const movedLeft =
+      deltaX <= -250;
+
+    const movedUp =
+      deltaY <= -180;
+
+    if (
+      movedLeft &&
+      movedUp
+    ) {
+      event.preventDefault();
+
+      openSettings();
+
+      return;
+    }
+
+    togglePause();
+  }
+);
+
+display.addEventListener(
+  "pointercancel",
+  () => {
+    gestureTracking = false;
+  }
+);
 
 document.addEventListener(
   "contextmenu",
@@ -1098,7 +1097,6 @@ if (buildNumber) {
 }
 
 applyVisualSettings();
-
 loadData();
 
 setInterval(

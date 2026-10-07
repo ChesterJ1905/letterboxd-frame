@@ -29,8 +29,6 @@ body {
   -webkit-user-select: none;
 
   overscroll-behavior: none;
-
-  touch-action: manipulation;
 }
 
 button,
@@ -55,7 +53,7 @@ input {
       var(--frame-brightness)
     );
 
-  touch-action: manipulation;
+  touch-action: none;
 }
 
 .background-image {
@@ -76,6 +74,8 @@ input {
   transition:
     background-image
     0.8s ease;
+
+  pointer-events: none;
 }
 
 .background-overlay {
