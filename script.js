@@ -162,7 +162,9 @@ function buildSlideQueue() {
     });
   }
 
-  if (settings.modes.facts) {
+  if (
+    settings.modes.facts
+  ) {
     slideQueue.push({
       type: "facts"
     });
@@ -360,13 +362,11 @@ function renderMovie(
 
   slideRoot.innerHTML = `
     <section class="movie-slide">
-
       <div class="poster-column">
         ${posterHTML}
       </div>
 
       <div class="movie-info">
-
         <p class="eyebrow">
           ${escapeHTML(label)}
         </p>
@@ -400,7 +400,6 @@ function renderMovie(
         </div>
 
         ${reviewHTML}
-
       </div>
     </section>
   `;
@@ -414,17 +413,16 @@ function renderFacts() {
 
   slideRoot.innerHTML = `
     <section class="facts-slide">
-
       <div class="facts-heading">
         HENRY'S LETTERBOXD
       </div>
 
       <div class="facts-grid">
-
         <div class="fact-card">
           <span class="fact-number">
             ${facts.totalFilms ?? "—"}
           </span>
+
           <span class="fact-label">
             FILMS
           </span>
@@ -434,6 +432,7 @@ function renderFacts() {
           <span class="fact-number">
             ${facts.thisYear ?? "—"}
           </span>
+
           <span class="fact-label">
             THIS YEAR
           </span>
@@ -443,6 +442,7 @@ function renderFacts() {
           <span class="fact-number">
             ${facts.thisMonth ?? "—"}
           </span>
+
           <span class="fact-label">
             THIS MONTH
           </span>
@@ -452,11 +452,11 @@ function renderFacts() {
           <span class="fact-number">
             ${facts.thisWeek ?? "—"}
           </span>
+
           <span class="fact-label">
             THIS WEEK
           </span>
         </div>
-
       </div>
     </section>
   `;
@@ -473,18 +473,17 @@ function renderRecent() {
     renderEmpty(
       "No recent movies found."
     );
+
     return;
   }
 
   slideRoot.innerHTML = `
     <section class="recent-slide">
-
       <h2 class="recent-title">
         RECENTLY WATCHED
       </h2>
 
       <div class="poster-grid">
-
         ${movies
           .map(movie => {
             if (!movie.poster) {
@@ -502,7 +501,6 @@ function renderRecent() {
             `;
           })
           .join("")}
-
       </div>
     </section>
   `;
@@ -518,18 +516,17 @@ function renderFavorites() {
     renderEmpty(
       "Favorites coming soon."
     );
+
     return;
   }
 
   slideRoot.innerHTML = `
     <section class="recent-slide">
-
       <h2 class="recent-title">
         FAVORITES
       </h2>
 
       <div class="poster-grid">
-
         ${favorites
           .slice(0, 12)
           .map(movie => {
@@ -548,7 +545,6 @@ function renderFavorites() {
             `;
           })
           .join("")}
-
       </div>
     </section>
   `;
@@ -571,7 +567,6 @@ function renderYearList(year) {
 
   slideRoot.innerHTML = `
     <section class="year-slide">
-
       <div class="year-heading">
         <div class="year-label">
           HENRY'S MOVIES
@@ -587,13 +582,11 @@ function renderYearList(year) {
       </div>
 
       <div class="year-poster-grid">
-
         ${movies
           .slice(0, 8)
           .map(
             (movie, index) => `
               <div class="year-movie">
-
                 <div class="year-rank">
                   #${index + 1}
                 </div>
@@ -617,12 +610,10 @@ function renderYearList(year) {
                       </div>
                     `
                 }
-
               </div>
             `
           )
           .join("")}
-
       </div>
     </section>
   `;
@@ -650,6 +641,7 @@ function setBackgroundImage(url) {
   if (!url) {
     backgroundImage.style.backgroundImage =
       "none";
+
     return;
   }
 
@@ -733,6 +725,7 @@ function togglePause() {
       "⏸",
       false
     );
+
   } else {
     showPlayStateIcon(
       "▶",
@@ -757,34 +750,47 @@ function showPlayStateIcon(
     .remove("hidden");
 
   if (autoHide) {
-    iconTimer = setTimeout(
-      () => {
-        playStateIcon
-          .classList
-          .add("hidden");
-      },
-      1800
-    );
+    iconTimer =
+      setTimeout(
+        () => {
+          playStateIcon
+            .classList
+            .add("hidden");
+        },
+        1800
+      );
   }
 }
 
 function openSettings() {
   clearTimeout(slideTimer);
 
-  settingsPanel.classList.remove("hidden");
+  settingsPanel
+    .classList
+    .remove("hidden");
 
-  settingsPanel.style.display = "flex";
-  settingsPanel.style.visibility = "visible";
-  settingsPanel.style.opacity = "1";
-  settingsPanel.style.zIndex = "2147483647";
+  settingsPanel.style.display =
+    "flex";
+
+  settingsPanel.style.visibility =
+    "visible";
+
+  settingsPanel.style.opacity =
+    "1";
+
+  settingsPanel.style.zIndex =
+    "2147483647";
 
   populateSettingsUI();
 }
 
 function closeSettings() {
-  settingsPanel.classList.add("hidden");
+  settingsPanel
+    .classList
+    .add("hidden");
 
-  settingsPanel.style.display = "none";
+  settingsPanel.style.display =
+    "none";
 
   if (!paused) {
     scheduleNextSlide();
@@ -885,22 +891,24 @@ function applyVisualSettings() {
     );
 }
 
-backgroundColorInput.addEventListener(
-  "input",
-  () => {
-    backgroundColorValue.textContent =
-      backgroundColorInput.value
-        .toUpperCase();
-  }
-);
+backgroundColorInput
+  .addEventListener(
+    "input",
+    () => {
+      backgroundColorValue.textContent =
+        backgroundColorInput.value
+          .toUpperCase();
+    }
+  );
 
-brightnessSlider.addEventListener(
-  "input",
-  () => {
-    brightnessValue.textContent =
-      `${brightnessSlider.value}%`;
-  }
-);
+brightnessSlider
+  .addEventListener(
+    "input",
+    () => {
+      brightnessValue.textContent =
+        `${brightnessSlider.value}%`;
+    }
+  );
 
 document
   .getElementById("saveSettings")
@@ -942,45 +950,39 @@ document
     }
   );
 
-function handleSettingsTouch(event) {
-  if (
-    !settingsPanel
-      .classList
-      .contains("hidden")
-  ) {
-    return;
-  }
-
-  event.preventDefault();
-  event.stopPropagation();
-
-  openSettings();
-}
-
-settingsHotspot.addEventListener(
-  "pointerdown",
-  handleSettingsTouch,
-  true
-);
-
 settingsHotspot.addEventListener(
   "touchstart",
-  handleSettingsTouch,
+  function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    settingsHotspot.textContent =
+      "OPENING...";
+
+    openSettings();
+  },
   {
-    capture: true,
     passive: false
   }
 );
 
 settingsHotspot.addEventListener(
-  "mousedown",
-  handleSettingsTouch,
+  "pointerdown",
+  function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    settingsHotspot.textContent =
+      "OPENING...";
+
+    openSettings();
+  },
   true
 );
 
 settingsHotspot.addEventListener(
   "click",
-  event => {
+  function(event) {
     event.preventDefault();
     event.stopPropagation();
   }
