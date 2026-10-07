@@ -24,8 +24,6 @@ let paused = false;
 let slideTimer = null;
 let iconTimer = null;
 
-let suppressNextTap = false;
-
 let secretTapCount = 0;
 let secretTapTimer = null;
 
@@ -33,59 +31,40 @@ const slideRoot =
   document.getElementById("slideRoot");
 
 const backgroundImage =
-  document.getElementById(
-    "backgroundImage"
-  );
+  document.getElementById("backgroundImage");
 
 const settingsPanel =
-  document.getElementById(
-    "settingsPanel"
-  );
+  document.getElementById("settingsPanel");
 
 const secretButton =
-  document.getElementById(
-    "secretButton"
-  );
+  document.getElementById("secretButton");
 
 const playStateIcon =
-  document.getElementById(
-    "playStateIcon"
-  );
+  document.getElementById("playStateIcon");
 
 const backgroundColorInput =
-  document.getElementById(
-    "backgroundColor"
-  );
+  document.getElementById("backgroundColor");
 
 const backgroundColorValue =
-  document.getElementById(
-    "backgroundColorValue"
-  );
+  document.getElementById("backgroundColorValue");
 
 const brightnessSlider =
-  document.getElementById(
-    "brightnessSlider"
-  );
+  document.getElementById("brightnessSlider");
 
 const brightnessValue =
-  document.getElementById(
-    "brightnessValue"
-  );
+  document.getElementById("brightnessValue");
 
 const slideDuration =
-  document.getElementById(
-    "slideDuration"
-  );
+  document.getElementById("slideDuration");
 
 async function loadData() {
   try {
-    const response =
-      await fetch(
-        "/api/data",
-        {
-          cache: "no-store"
-        }
-      );
+    const response = await fetch(
+      "/api/data",
+      {
+        cache: "no-store"
+      }
+    );
 
     if (!response.ok) {
       throw new Error(
@@ -93,8 +72,7 @@ async function loadData() {
       );
     }
 
-    data =
-      await response.json();
+    data = await response.json();
 
     buildSlideQueue();
     showSlide(0);
@@ -229,9 +207,7 @@ function buildSlideQueue() {
             Number(b) - Number(a)
         );
 
-    for (
-      const year of years
-    ) {
+    for (const year of years) {
       slideQueue.push({
         type: "yearList",
         year
@@ -612,6 +588,7 @@ function renderYearList(year) {
     <section class="year-slide">
 
       <div class="year-heading">
+
         <div class="year-label">
           HENRY'S MOVIES
         </div>
@@ -623,6 +600,7 @@ function renderYearList(year) {
         <div class="year-subtitle">
           TOP MOVIES OF THE YEAR
         </div>
+
       </div>
 
       <div class="year-poster-grid">
@@ -663,7 +641,6 @@ function renderYearList(year) {
           .join("")}
 
       </div>
-
     </section>
   `;
 }
@@ -752,26 +729,11 @@ function escapeHTML(
   value = ""
 ) {
   return String(value)
-    .replace(
-      /&/g,
-      "&amp;"
-    )
-    .replace(
-      /</g,
-      "&lt;"
-    )
-    .replace(
-      />/g,
-      "&gt;"
-    )
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-    .replace(
-      /'/g,
-      "&#039;"
-    );
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function escapeAttribute(
@@ -821,7 +783,8 @@ function showPlayStateIcon(
   playStateIcon.textContent =
     icon;
 
-  playStateIcon.classList
+  playStateIcon
+    .classList
     .remove("hidden");
 
   if (autoHide) {
@@ -838,8 +801,6 @@ function showPlayStateIcon(
 }
 
 function openSettings() {
-  suppressNextTap = true;
-
   clearTimeout(
     slideTimer
   );
@@ -928,7 +889,6 @@ function readSettingsFromUI() {
   };
 
   saveSettings();
-
   applyVisualSettings();
 
   if (data) {
@@ -1011,9 +971,7 @@ document
         );
 
       saveSettings();
-
       applyVisualSettings();
-
       populateSettingsUI();
 
       if (data) {
@@ -1025,8 +983,9 @@ document
 
 secretButton
   .addEventListener(
-    "click",
+    "pointerup",
     event => {
+      event.preventDefault();
       event.stopPropagation();
 
       secretTapCount++;
@@ -1054,15 +1013,21 @@ secretButton
           () => {
             secretTapCount = 0;
           },
-          2500
+          3000
         );
     }
   );
 
+secretButton
+  .addEventListener(
+    "contextmenu",
+    event => {
+      event.preventDefault();
+    }
+  );
+
 document
-  .getElementById(
-    "display"
-  )
+  .getElementById("display")
   .addEventListener(
     "click",
     event => {
@@ -1073,20 +1038,11 @@ document
         return;
       }
 
-      if (
-        suppressNextTap
-      ) {
-        suppressNextTap = false;
-
-        return;
-      }
-
       togglePause();
     }
   );
 
 applyVisualSettings();
-
 loadData();
 
 setInterval(
