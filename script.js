@@ -1,4 +1,4 @@
-const BUILD_NUMBER = "2026.10.07.1";
+const BUILD_NUMBER = "2026.10.07.2";
 
 const DEFAULT_SETTINGS = {
   modes: {
@@ -26,10 +26,6 @@ let paused = false;
 let slideTimer = null;
 let iconTimer = null;
 
-let gestureTracking = false;
-let gestureStartX = 0;
-let gestureStartY = 0;
-
 const slideRoot =
   document.getElementById("slideRoot");
 
@@ -41,6 +37,9 @@ const settingsPanel =
 
 const playStateIcon =
   document.getElementById("playStateIcon");
+
+const settingsHotspot =
+  document.getElementById("settingsHotspot");
 
 const backgroundColorInput =
   document.getElementById("backgroundColor");
@@ -59,9 +58,6 @@ const slideDuration =
 
 const buildNumber =
   document.getElementById("buildNumber");
-
-const display =
-  document.getElementById("display");
 
 async function loadData() {
   try {
@@ -163,7 +159,9 @@ function buildSlideQueue() {
     });
   }
 
-  if (settings.modes.facts) {
+  if (
+    settings.modes.facts
+  ) {
     slideQueue.push({
       type: "facts"
     });
@@ -194,7 +192,9 @@ function buildSlideQueue() {
     });
   }
 
-  if (settings.modes.favorites) {
+  if (
+    settings.modes.favorites
+  ) {
     slideQueue.push({
       type: "favorites"
     });
@@ -205,12 +205,11 @@ function buildSlideQueue() {
     data.yearLists
   ) {
     const years =
-      Object.keys(
-        data.yearLists
-      ).sort(
-        (a, b) =>
-          Number(b) - Number(a)
-      );
+      Object.keys(data.yearLists)
+        .sort(
+          (a, b) =>
+            Number(b) - Number(a)
+        );
 
     for (const year of years) {
       slideQueue.push({
@@ -423,10 +422,7 @@ function renderFacts() {
 
         <div class="fact-card">
           <span class="fact-number">
-            ${
-              facts.totalFilms ??
-              "—"
-            }
+            ${facts.totalFilms ?? "—"}
           </span>
 
           <span class="fact-label">
@@ -436,10 +432,7 @@ function renderFacts() {
 
         <div class="fact-card">
           <span class="fact-number">
-            ${
-              facts.thisYear ??
-              "—"
-            }
+            ${facts.thisYear ?? "—"}
           </span>
 
           <span class="fact-label">
@@ -449,10 +442,7 @@ function renderFacts() {
 
         <div class="fact-card">
           <span class="fact-number">
-            ${
-              facts.thisMonth ??
-              "—"
-            }
+            ${facts.thisMonth ?? "—"}
           </span>
 
           <span class="fact-label">
@@ -462,10 +452,7 @@ function renderFacts() {
 
         <div class="fact-card">
           <span class="fact-number">
-            ${
-              facts.thisWeek ??
-              "—"
-            }
+            ${facts.thisWeek ?? "—"}
           </span>
 
           <span class="fact-label">
@@ -702,33 +689,28 @@ function makeStars(rating) {
   );
 }
 
-function formatDate(
-  dateString
-) {
+function formatDate(dateString) {
   try {
     const date =
       new Date(
         `${dateString}T12:00:00`
       );
 
-    return date
-      .toLocaleDateString(
-        "en-US",
-        {
-          month: "long",
-          day: "numeric",
-          year: "numeric"
-        }
-      );
+    return date.toLocaleDateString(
+      "en-US",
+      {
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+      }
+    );
 
   } catch {
     return dateString;
   }
 }
 
-function escapeHTML(
-  value = ""
-) {
+function escapeHTML(value = "") {
   return String(value)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -737,9 +719,7 @@ function escapeHTML(
     .replace(/'/g, "&#039;");
 }
 
-function escapeAttribute(
-  value = ""
-) {
+function escapeAttribute(value = "") {
   return escapeHTML(value);
 }
 
@@ -803,11 +783,7 @@ function showPlayStateIcon(
 }
 
 function openSettings() {
-  clearTimeout(
-    slideTimer
-  );
-
-  gestureTracking = false;
+  clearTimeout(slideTimer);
 
   settingsPanel
     .classList
@@ -979,110 +955,31 @@ document
     }
   );
 
-display.addEventListener(
-  "pointerdown",
+settingsHotspot.addEventListener(
+  "click",
   event => {
-    if (
-      !settingsPanel
-        .classList
-        .contains("hidden")
-    ) {
-      return;
-    }
+    event.preventDefault();
+    event.stopPropagation();
 
-    const startZone = 300;
+    openSettings();
+  }
+);
 
-    const inBottomRight =
-      event.clientX >=
-        window.innerWidth -
-        startZone &&
-      event.clientY >=
-        window.innerHeight -
-        startZone;
-
-    if (!inBottomRight) {
-      gestureTracking = false;
-      return;
-    }
-
-    gestureStartX =
-      event.clientX;
-
-    gestureStartY =
-      event.clientY;
-
-    gestureTracking =
-      true;
-
-    if (
-      display.setPointerCapture
-    ) {
-      try {
-        display.setPointerCapture(
-          event.pointerId
-        );
-      } catch {
+document
+  .getElementById("display")
+  .addEventListener(
+    "click",
+    event => {
+      if (
+        event.target ===
+        settingsHotspot
+      ) {
+        return;
       }
-    }
-  }
-);
 
-display.addEventListener(
-  "pointerup",
-  event => {
-    if (
-      !settingsPanel
-        .classList
-        .contains("hidden")
-    ) {
-      return;
-    }
-
-    if (
-      !gestureTracking
-    ) {
       togglePause();
-      return;
     }
-
-    const deltaX =
-      event.clientX -
-      gestureStartX;
-
-    const deltaY =
-      event.clientY -
-      gestureStartY;
-
-    gestureTracking =
-      false;
-
-    const movedLeft =
-      deltaX <= -250;
-
-    const movedUp =
-      deltaY <= -180;
-
-    if (
-      movedLeft &&
-      movedUp
-    ) {
-      event.preventDefault();
-
-      openSettings();
-
-      return;
-    }
-
-    togglePause();
-  }
-);
-
-display.addEventListener(
-  "pointercancel",
-  () => {
-    gestureTracking = false;
-  }
-);
+  );
 
 document.addEventListener(
   "contextmenu",
