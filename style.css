@@ -10,8 +10,10 @@
 html,
 body {
   margin: 0;
+
   width: 100%;
   height: 100%;
+
   overflow: hidden;
 
   background: #000;
@@ -143,6 +145,7 @@ input {
 
 .movie-info {
   min-width: 0;
+
   max-width: 700px;
 }
 
@@ -537,49 +540,43 @@ input {
 #settingsHotspot {
   position: fixed;
 
-  top: 18px;
-  left: 18px;
+  top: 30px;
+  left: 30px;
 
-  z-index: 9999;
+  z-index: 99999;
 
-  min-width: 120px;
+  width: 240px;
+  height: 100px;
 
-  height: 52px;
+  padding: 0;
 
-  padding:
-    0 18px;
+  border: none;
 
-  border:
-    2px solid
-    rgba(
-      255,
-      255,
-      255,
-      0.3
-    );
+  border-radius: 18px;
 
-  border-radius: 12px;
-
-  background:
-    rgba(
-      255,
-      255,
-      255,
-      0.94
-    );
+  background: white;
 
   color: #111;
 
-  font-size: 18px;
+  font-size: 28px;
 
   font-weight: 800;
 
   cursor: pointer;
 
-  touch-action: manipulation;
+  touch-action: none;
 
   -webkit-tap-highlight-color:
     transparent;
+
+  box-shadow:
+    0 10px 30px
+    rgba(
+      0,
+      0,
+      0,
+      0.35
+    );
 }
 
 .home-build-number {
@@ -608,7 +605,7 @@ input {
       255,
       255,
       255,
-      0.75
+      0.8
     );
 
   font-family: monospace;
@@ -623,7 +620,7 @@ input {
 
   inset: 0;
 
-  z-index: 10000;
+  z-index: 100000;
 
   display: flex;
 
@@ -637,7 +634,7 @@ input {
       0,
       0,
       0,
-      0.86
+      0.88
     );
 }
 

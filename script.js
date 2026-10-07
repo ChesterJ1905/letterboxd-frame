@@ -1,4 +1,4 @@
-const BUILD_NUMBER = "2026.10.07.3";
+const BUILD_NUMBER = "2026.10.07.4";
 
 const DEFAULT_SETTINGS = {
   modes: {
@@ -193,7 +193,9 @@ function buildSlideQueue() {
     });
   }
 
-  if (settings.modes.favorites) {
+  if (
+    settings.modes.favorites
+  ) {
     slideQueue.push({
       type: "favorites"
     });
@@ -423,7 +425,6 @@ function renderFacts() {
           <span class="fact-number">
             ${facts.totalFilms ?? "—"}
           </span>
-
           <span class="fact-label">
             FILMS
           </span>
@@ -433,7 +434,6 @@ function renderFacts() {
           <span class="fact-number">
             ${facts.thisYear ?? "—"}
           </span>
-
           <span class="fact-label">
             THIS YEAR
           </span>
@@ -443,7 +443,6 @@ function renderFacts() {
           <span class="fact-number">
             ${facts.thisMonth ?? "—"}
           </span>
-
           <span class="fact-label">
             THIS MONTH
           </span>
@@ -453,7 +452,6 @@ function renderFacts() {
           <span class="fact-number">
             ${facts.thisWeek ?? "—"}
           </span>
-
           <span class="fact-label">
             THIS WEEK
           </span>
@@ -475,7 +473,6 @@ function renderRecent() {
     renderEmpty(
       "No recent movies found."
     );
-
     return;
   }
 
@@ -521,7 +518,6 @@ function renderFavorites() {
     renderEmpty(
       "Favorites coming soon."
     );
-
     return;
   }
 
@@ -577,7 +573,6 @@ function renderYearList(year) {
     <section class="year-slide">
 
       <div class="year-heading">
-
         <div class="year-label">
           HENRY'S MOVIES
         </div>
@@ -589,7 +584,6 @@ function renderYearList(year) {
         <div class="year-subtitle">
           TOP MOVIES OF THE YEAR
         </div>
-
       </div>
 
       <div class="year-poster-grid">
@@ -656,7 +650,6 @@ function setBackgroundImage(url) {
   if (!url) {
     backgroundImage.style.backgroundImage =
       "none";
-
     return;
   }
 
@@ -740,7 +733,6 @@ function togglePause() {
       "⏸",
       false
     );
-
   } else {
     showPlayStateIcon(
       "▶",
@@ -765,15 +757,14 @@ function showPlayStateIcon(
     .remove("hidden");
 
   if (autoHide) {
-    iconTimer =
-      setTimeout(
-        () => {
-          playStateIcon
-            .classList
-            .add("hidden");
-        },
-        1800
-      );
+    iconTimer = setTimeout(
+      () => {
+        playStateIcon
+          .classList
+          .add("hidden");
+      },
+      1800
+    );
   }
 }
 
@@ -891,24 +882,22 @@ function applyVisualSettings() {
     );
 }
 
-backgroundColorInput
-  .addEventListener(
-    "input",
-    () => {
-      backgroundColorValue.textContent =
-        backgroundColorInput.value
-          .toUpperCase();
-    }
-  );
+backgroundColorInput.addEventListener(
+  "input",
+  () => {
+    backgroundColorValue.textContent =
+      backgroundColorInput.value
+        .toUpperCase();
+  }
+);
 
-brightnessSlider
-  .addEventListener(
-    "input",
-    () => {
-      brightnessValue.textContent =
-        `${brightnessSlider.value}%`;
-    }
-  );
+brightnessSlider.addEventListener(
+  "input",
+  () => {
+    brightnessValue.textContent =
+      `${brightnessSlider.value}%`;
+  }
+);
 
 document
   .getElementById("saveSettings")
@@ -950,14 +939,40 @@ document
     }
   );
 
-settingsHotspot.addEventListener(
-  "pointerup",
-  event => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    openSettings();
+function handleSettingsTouch(event) {
+  if (
+    !settingsPanel
+      .classList
+      .contains("hidden")
+  ) {
+    return;
   }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  openSettings();
+}
+
+settingsHotspot.addEventListener(
+  "pointerdown",
+  handleSettingsTouch,
+  true
+);
+
+settingsHotspot.addEventListener(
+  "touchstart",
+  handleSettingsTouch,
+  {
+    capture: true,
+    passive: false
+  }
+);
+
+settingsHotspot.addEventListener(
+  "mousedown",
+  handleSettingsTouch,
+  true
 );
 
 settingsHotspot.addEventListener(
