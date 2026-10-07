@@ -1,4 +1,4 @@
-const BUILD_NUMBER = "2026.10.07.6";
+const BUILD_NUMBER = "1.01";
 
 const DEFAULT_SETTINGS = {
   modes: {
@@ -59,8 +59,6 @@ const slideDuration =
 const buildNumber =
   document.getElementById("buildNumber");
 
-const homeBuildNumber =
-  document.getElementById("homeBuildNumber");
 
 async function loadData() {
   try {

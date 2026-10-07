@@ -609,35 +609,6 @@ input {
     transparent;
 }
 
-.home-build-number {
-  position: fixed;
-
-  right: 12px;
-  bottom: 10px;
-
-  z-index: 8000;
-
-  padding:
-    5px 8px;
-
-  border-radius: 6px;
-
-  background:
-    rgba(
-      0,
-      0,
-      0,
-      0.55
-    );
-
-  color: white;
-
-  font-family: monospace;
-
-  font-size: 12px;
-
-  pointer-events: none;
-}
 
 .settings-panel {
   position: fixed !important;
