@@ -801,6 +801,21 @@ function closeSettings() {
     scheduleNextSlide();
   }
 }
+const debugSize = document.createElement("div");
+
+debugSize.style.position = "fixed";
+debugSize.style.bottom = "10px";
+debugSize.style.left = "10px";
+debugSize.style.zIndex = "99999";
+debugSize.style.background = "black";
+debugSize.style.color = "white";
+debugSize.style.padding = "8px";
+debugSize.style.fontSize = "18px";
+
+debugSize.textContent =
+  `${window.innerWidth} × ${window.innerHeight}`;
+
+document.body.appendChild(debugSize);
 
 function populateSettingsUI() {
   document
