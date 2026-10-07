@@ -64,12 +64,13 @@ const homeBuildNumber =
 
 async function loadData() {
   try {
-    const response = await fetch(
-      "/api/data",
-      {
-        cache: "no-store"
-      }
-    );
+    const response =
+      await fetch(
+        "/api/data",
+        {
+          cache: "no-store"
+        }
+      );
 
     if (!response.ok) {
       throw new Error(
@@ -77,7 +78,8 @@ async function loadData() {
       );
     }
 
-    data = await response.json();
+    data =
+      await response.json();
 
     buildSlideQueue();
     showSlide(0);
@@ -208,13 +210,16 @@ function buildSlideQueue() {
     data.yearLists
   ) {
     const years =
-      Object.keys(data.yearLists)
-        .sort(
-          (a, b) =>
-            Number(b) - Number(a)
-        );
+      Object.keys(
+        data.yearLists
+      ).sort(
+        (a, b) =>
+          Number(b) - Number(a)
+      );
 
-    for (const year of years) {
+    for (
+      const year of years
+    ) {
       slideQueue.push({
         type: "yearList",
         year
@@ -237,7 +242,8 @@ function showSlide(index) {
   }
 
   slideIndex =
-    index % slideQueue.length;
+    index %
+    slideQueue.length;
 
   const slide =
     slideQueue[slideIndex];
@@ -294,14 +300,15 @@ function showSlide(index) {
 function scheduleNextSlide() {
   clearTimeout(slideTimer);
 
-  slideTimer = setTimeout(
-    () => {
-      showSlide(
-        slideIndex + 1
-      );
-    },
-    settings.slideDuration
-  );
+  slideTimer =
+    setTimeout(
+      () => {
+        showSlide(
+          slideIndex + 1
+        );
+      },
+      settings.slideDuration
+    );
 }
 
 function pickRandomMovie() {
@@ -867,6 +874,7 @@ function readSettingsFromUI() {
   };
 
   saveSettings();
+
   applyVisualSettings();
 
   if (data) {
@@ -875,7 +883,44 @@ function readSettingsFromUI() {
   }
 }
 
+function getContrastTextColor(hex) {
+  const cleanHex =
+    hex.replace("#", "");
+
+  const r =
+    parseInt(
+      cleanHex.substring(0, 2),
+      16
+    );
+
+  const g =
+    parseInt(
+      cleanHex.substring(2, 4),
+      16
+    );
+
+  const b =
+    parseInt(
+      cleanHex.substring(4, 6),
+      16
+    );
+
+  const luminance =
+    (0.299 * r) +
+    (0.587 * g) +
+    (0.114 * b);
+
+  return luminance > 160
+    ? "#111111"
+    : "#ffffff";
+}
+
 function applyVisualSettings() {
+  const textColor =
+    getContrastTextColor(
+      settings.backgroundColor
+    );
+
   document.documentElement
     .style
     .setProperty(
@@ -889,6 +934,13 @@ function applyVisualSettings() {
       "--frame-brightness",
       settings.brightness / 100
     );
+
+  document.documentElement
+    .style
+    .setProperty(
+      "--frame-text",
+      textColor
+    );
 }
 
 backgroundColorInput
@@ -898,6 +950,25 @@ backgroundColorInput
       backgroundColorValue.textContent =
         backgroundColorInput.value
           .toUpperCase();
+
+      const previewTextColor =
+        getContrastTextColor(
+          backgroundColorInput.value
+        );
+
+      document.documentElement
+        .style
+        .setProperty(
+          "--frame-background",
+          backgroundColorInput.value
+        );
+
+      document.documentElement
+        .style
+        .setProperty(
+          "--frame-text",
+          previewTextColor
+        );
     }
   );
 
@@ -911,7 +982,9 @@ brightnessSlider
   );
 
 document
-  .getElementById("saveSettings")
+  .getElementById(
+    "saveSettings"
+  )
   .addEventListener(
     "click",
     () => {
@@ -921,14 +994,18 @@ document
   );
 
 document
-  .getElementById("closeSettings")
+  .getElementById(
+    "closeSettings"
+  )
   .addEventListener(
     "click",
     closeSettings
   );
 
 document
-  .getElementById("resetSettings")
+  .getElementById(
+    "resetSettings"
+  )
   .addEventListener(
     "click",
     () => {
@@ -950,43 +1027,54 @@ document
     }
   );
 
-settingsHotspot.addEventListener(
-  "touchstart",
-  function(event) {
-    event.preventDefault();
-    event.stopPropagation();
-
-    settingsHotspot.textContent =
-      "OPENING...";
-
-    openSettings();
-  },
-  {
-    passive: false
+function handleSettingsTouch(
+  event
+) {
+  if (
+    !settingsPanel
+      .classList
+      .contains("hidden")
+  ) {
+    return;
   }
-);
 
-settingsHotspot.addEventListener(
-  "pointerdown",
-  function(event) {
-    event.preventDefault();
-    event.stopPropagation();
+  event.preventDefault();
+  event.stopPropagation();
 
-    settingsHotspot.textContent =
-      "OPENING...";
+  openSettings();
+}
 
-    openSettings();
-  },
-  true
-);
+settingsHotspot
+  .addEventListener(
+    "touchstart",
+    handleSettingsTouch,
+    {
+      passive: false
+    }
+  );
 
-settingsHotspot.addEventListener(
-  "click",
-  function(event) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-);
+settingsHotspot
+  .addEventListener(
+    "pointerdown",
+    handleSettingsTouch,
+    true
+  );
+
+settingsHotspot
+  .addEventListener(
+    "mousedown",
+    handleSettingsTouch,
+    true
+  );
+
+settingsHotspot
+  .addEventListener(
+    "click",
+    event => {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  );
 
 document
   .getElementById("display")

@@ -1,6 +1,7 @@
 :root {
   --frame-background: #0b1117;
   --frame-brightness: 1;
+  --frame-text: #ffffff;
 }
 
 * {
@@ -13,9 +14,14 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
+
   background: #000;
-  color: #fff;
-  font-family: Arial, Helvetica, sans-serif;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
   user-select: none;
   -webkit-user-select: none;
 }
@@ -28,59 +34,94 @@ input {
 
 #display {
   position: relative;
+
   width: 100vw;
   height: 100vh;
+
   overflow: hidden;
-  background: var(--frame-background);
-  filter: brightness(var(--frame-brightness));
+
+  background:
+    var(--frame-background);
+
+  color:
+    var(--frame-text);
+
+  filter:
+    brightness(
+      var(--frame-brightness)
+    );
 }
 
 .background-image {
   position: absolute;
+
   inset: -50px;
+
   background-position: center;
   background-size: cover;
-  filter: blur(30px) saturate(1.1);
-  transform: scale(1.14);
+
+  filter:
+    blur(30px)
+    saturate(1.1);
+
+  transform:
+    scale(1.14);
+
   opacity: 0.3;
+
   pointer-events: none;
 }
 
 .background-overlay {
   position: absolute;
+
   inset: 0;
+
   background:
     linear-gradient(
       90deg,
-      rgba(0, 0, 0, 0.9) 0%,
-      rgba(0, 0, 0, 0.68) 48%,
-      rgba(0, 0, 0, 0.4) 100%
+      rgba(0, 0, 0, 0.64) 0%,
+      rgba(0, 0, 0, 0.42) 48%,
+      rgba(0, 0, 0, 0.2) 100%
     );
+
   pointer-events: none;
 }
 
 #slideRoot {
   position: relative;
+
   z-index: 5;
+
   width: 100%;
   height: 100%;
+
   pointer-events: none;
 }
 
 .movie-slide {
   width: 100%;
   height: 100%;
-  padding: 45px 55px;
+
+  padding:
+    45px 55px;
+
   display: grid;
-  grid-template-columns: 350px 1fr;
+
+  grid-template-columns:
+    350px 1fr;
+
   align-items: center;
+
   gap: 55px;
 }
 
 .poster-column {
   width: 350px;
   height: 100%;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
 }
@@ -88,228 +129,417 @@ input {
 .poster {
   max-width: 350px;
   max-height: 690px;
+
   width: auto;
   height: auto;
+
   aspect-ratio: 2 / 3;
+
   object-fit: cover;
+
   border-radius: 16px;
+
   box-shadow:
-    0 28px 70px rgba(0, 0, 0, 0.7);
+    0 28px 70px
+    rgba(0, 0, 0, 0.7);
 }
 
 .movie-info {
   min-width: 0;
+
   max-width: 700px;
 }
 
 .eyebrow {
-  margin: 0 0 18px;
+  margin:
+    0 0 18px;
+
   font-size: 16px;
+
   font-weight: 700;
+
   letter-spacing: 5px;
-  opacity: 0.55;
+
+  color:
+    color-mix(
+      in srgb,
+      var(--frame-text) 60%,
+      transparent
+    );
 }
 
 .movie-title {
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(44px, 5vw, 68px);
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size:
+    clamp(
+      44px,
+      5vw,
+      68px
+    );
+
   line-height: 1;
+
+  color:
+    var(--frame-text);
+}
+
+.movie-year,
+.movie-date,
+.movie-review {
+  color:
+    var(--frame-text);
 }
 
 .movie-year {
   margin-top: 16px;
+
   font-size: 24px;
-  opacity: 0.55;
+
+  opacity: 0.62;
 }
 
 .movie-rating {
   margin-top: 26px;
+
   font-size: 40px;
+
   letter-spacing: 3px;
+
   color: #ffd36a;
 }
 
 .movie-date {
   margin-top: 16px;
+
   font-size: 20px;
-  opacity: 0.65;
+
+  opacity: 0.7;
 }
 
 .movie-review {
   margin-top: 24px;
+
   max-width: 660px;
+
   font-size: 21px;
+
   line-height: 1.42;
-  opacity: 0.87;
+
+  opacity: 0.9;
+
   display: -webkit-box;
+
   -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
+
   overflow: hidden;
 }
 
 .facts-slide {
   width: 100%;
   height: 100%;
-  padding: 60px 70px;
+
+  padding:
+    60px 70px;
+
   display: flex;
+
   flex-direction: column;
+
   justify-content: center;
 }
 
 .facts-heading {
   margin-bottom: 42px;
+
   font-size: 18px;
+
   font-weight: 700;
+
   letter-spacing: 6px;
+
+  color:
+    var(--frame-text);
+
   opacity: 0.55;
 }
 
 .facts-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+
+  grid-template-columns:
+    repeat(2, 1fr);
+
   gap: 30px;
 }
 
 .fact-card {
   padding: 28px;
+
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.045);
+
+  background:
+    rgba(
+      128,
+      128,
+      128,
+      0.12
+    );
+
   border:
-    1px solid rgba(255, 255, 255, 0.07);
+    1px solid
+    rgba(
+      128,
+      128,
+      128,
+      0.22
+    );
 }
 
 .fact-number {
   display: block;
-  font-family: Georgia, "Times New Roman", serif;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
   font-size: 74px;
+
   font-weight: 700;
+
+  color:
+    var(--frame-text);
 }
 
 .fact-label {
   display: block;
+
   margin-top: 10px;
+
   font-size: 18px;
+
   letter-spacing: 4px;
-  opacity: 0.5;
+
+  color:
+    var(--frame-text);
+
+  opacity: 0.55;
 }
 
 .recent-slide {
   width: 100%;
   height: 100%;
-  padding: 40px 50px;
+
+  padding:
+    40px 50px;
 }
 
 .recent-title {
-  margin: 0 0 24px;
+  margin:
+    0 0 24px;
+
   font-size: 18px;
+
   letter-spacing: 5px;
-  opacity: 0.55;
+
+  color:
+    var(--frame-text);
+
+  opacity: 0.6;
 }
 
 .poster-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  grid-template-rows: repeat(2, 1fr);
+
+  grid-template-columns:
+    repeat(6, 1fr);
+
+  grid-template-rows:
+    repeat(2, 1fr);
+
   gap: 15px;
-  height: calc(100% - 50px);
+
+  height:
+    calc(
+      100% - 50px
+    );
 }
 
 .grid-poster {
   width: 100%;
   height: 100%;
+
   min-height: 0;
+
   object-fit: cover;
+
   border-radius: 10px;
+
   box-shadow:
-    0 12px 28px rgba(0, 0, 0, 0.5);
+    0 12px 28px
+    rgba(0, 0, 0, 0.5);
 }
 
 .year-slide {
   width: 100%;
   height: 100%;
-  padding: 40px 50px;
+
+  padding:
+    40px 50px;
+
   display: flex;
+
   flex-direction: column;
 }
 
 .year-heading {
   display: flex;
+
   align-items: baseline;
+
   gap: 18px;
+
   margin-bottom: 24px;
+}
+
+.year-label,
+.year-subtitle,
+.year-number {
+  color:
+    var(--frame-text);
 }
 
 .year-label {
   font-size: 16px;
+
   font-weight: 700;
+
   letter-spacing: 4px;
-  opacity: 0.5;
+
+  opacity: 0.55;
 }
 
 .year-number {
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
   font-size: 66px;
 }
 
 .year-subtitle {
   font-size: 16px;
+
   letter-spacing: 3px;
-  opacity: 0.65;
+
+  opacity: 0.7;
 }
 
 .year-poster-grid {
   flex: 1;
+
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(2, 1fr);
+
+  grid-template-columns:
+    repeat(4, 1fr);
+
+  grid-template-rows:
+    repeat(2, 1fr);
+
   gap: 16px;
+
   min-height: 0;
 }
 
 .year-movie {
   position: relative;
+
   min-height: 0;
 }
 
 .year-poster {
   width: 100%;
   height: 100%;
+
   object-fit: cover;
+
   border-radius: 12px;
 }
 
 .year-poster-empty {
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   padding: 20px;
+
   background:
-    rgba(255, 255, 255, 0.05);
+    rgba(
+      128,
+      128,
+      128,
+      0.14
+    );
+
+  color:
+    var(--frame-text);
+
   text-align: center;
 }
 
 .year-rank {
   position: absolute;
+
   top: 10px;
   left: 10px;
+
   z-index: 10;
-  padding: 7px 10px;
+
+  padding:
+    7px 10px;
+
   border-radius: 8px;
+
   background:
-    rgba(0, 0, 0, 0.78);
+    rgba(
+      0,
+      0,
+      0,
+      0.78
+    );
+
+  color: white;
+
   font-size: 18px;
+
   font-weight: 700;
 }
 
 .empty-slide {
   width: 100%;
   height: 100%;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   padding: 80px;
+
+  color:
+    var(--frame-text);
+
   text-align: center;
 }
 
@@ -319,18 +549,34 @@ input {
 
 .play-state-icon {
   position: fixed;
+
   top: 25px;
   right: 30px;
+
   z-index: 500;
+
   width: 65px;
   height: 65px;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   border-radius: 50%;
+
   background:
-    rgba(0, 0, 0, 0.55);
+    rgba(
+      0,
+      0,
+      0,
+      0.55
+    );
+
+  color: white;
+
   font-size: 30px;
+
   pointer-events: none;
 }
 
@@ -352,39 +598,44 @@ input {
   padding: 0;
 
   border: none;
-  border-radius: 18px;
 
-  background: white;
-  color: #111;
+  background: transparent;
 
-  font-size: 28px;
-  font-weight: 800;
-
-  cursor: pointer;
+  opacity: 0;
 
   touch-action: none;
 
   -webkit-tap-highlight-color:
-    rgba(255, 128, 0, 0.45);
-
-  box-shadow:
-    0 10px 30px
-    rgba(0, 0, 0, 0.35);
+    transparent;
 }
 
 .home-build-number {
   position: fixed;
+
   right: 12px;
   bottom: 10px;
+
   z-index: 8000;
-  padding: 5px 8px;
+
+  padding:
+    5px 8px;
+
   border-radius: 6px;
+
   background:
-    rgba(0, 0, 0, 0.55);
-  color:
-    rgba(255, 255, 255, 0.8);
+    rgba(
+      0,
+      0,
+      0,
+      0.55
+    );
+
+  color: white;
+
   font-family: monospace;
+
   font-size: 12px;
+
   pointer-events: none;
 }
 
@@ -399,7 +650,8 @@ input {
   width: 100vw !important;
   height: 100vh !important;
 
-  z-index: 2147483647 !important;
+  z-index:
+    2147483647 !important;
 
   display: flex;
 
@@ -408,7 +660,8 @@ input {
 
   padding: 20px;
 
-  background: #000 !important;
+  background:
+    #000 !important;
 
   visibility: visible;
 
@@ -416,15 +669,18 @@ input {
 }
 
 .settings-panel.hidden {
-  display: none !important;
+  display:
+    none !important;
 }
 
 .settings-box {
   position: relative;
 
-  z-index: 2147483647;
+  z-index:
+    2147483647;
 
   width: 600px;
+
   max-width: 90vw;
   max-height: 90vh;
 
@@ -432,7 +688,8 @@ input {
 
   padding: 30px;
 
-  border: 4px solid white;
+  border:
+    4px solid white;
 
   border-radius: 20px;
 
@@ -442,49 +699,79 @@ input {
 
   box-shadow:
     0 30px 100px
-    rgba(0, 0, 0, 0.85);
+    rgba(
+      0,
+      0,
+      0,
+      0.85
+    );
 }
 
 .settings-header {
   display: flex;
+
   align-items: center;
-  justify-content: space-between;
+
+  justify-content:
+    space-between;
+
   margin-bottom: 14px;
 }
 
 .settings-header h2 {
   margin: 0;
+
   font-size: 32px;
 }
 
 .close-button {
   width: 52px;
   height: 52px;
+
   border: none;
+
   border-radius: 50%;
+
   background: white;
+
   color: black;
+
   font-size: 34px;
-  cursor: pointer;
 }
 
 .settings-section {
-  padding: 18px 0;
+  padding:
+    18px 0;
+
   border-top:
-    1px solid rgba(255, 255, 255, 0.15);
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.15
+    );
 }
 
 .settings-section h3 {
-  margin: 0 0 14px;
+  margin:
+    0 0 14px;
+
   font-size: 17px;
+
   opacity: 0.9;
 }
 
 .toggle-row {
   min-height: 46px;
+
   display: flex;
+
   align-items: center;
-  justify-content: space-between;
+
+  justify-content:
+    space-between;
+
   font-size: 19px;
 }
 
@@ -495,26 +782,36 @@ input {
 
 .color-setting {
   display: flex;
+
   align-items: center;
+
   gap: 16px;
 }
 
 #backgroundColor {
   width: 100px;
   height: 52px;
+
   border: none;
-  background: transparent;
+
+  background:
+    transparent;
 }
 
 #backgroundColorValue {
-  font-family: monospace;
+  font-family:
+    monospace;
+
   font-size: 18px;
 }
 
 .slider-title {
   display: flex;
+
   align-items: center;
-  justify-content: space-between;
+
+  justify-content:
+    space-between;
 }
 
 .slider-title h3 {
@@ -523,54 +820,75 @@ input {
 
 #brightnessSlider {
   width: 100%;
+
   margin-top: 18px;
 }
 
 #slideDuration {
   width: 100%;
+
   padding: 14px;
+
   border: none;
+
   border-radius: 10px;
+
   background: #333;
+
   color: white;
+
   font-size: 18px;
 }
 
 .build-section {
   display: flex;
-  justify-content: space-between;
+
+  justify-content:
+    space-between;
+
   font-size: 15px;
+
   opacity: 0.7;
 }
 
 #buildNumber {
-  font-family: monospace;
+  font-family:
+    monospace;
+
   font-weight: 700;
 }
 
 .settings-actions {
   display: flex;
+
   gap: 14px;
+
   margin-top: 18px;
 }
 
 .primary-button,
 .secondary-button {
   flex: 1;
+
   padding: 15px;
+
   border: none;
+
   border-radius: 12px;
+
   font-size: 18px;
+
   font-weight: 700;
-  cursor: pointer;
 }
 
 .primary-button {
   background: white;
+
   color: black;
 }
 
 .secondary-button {
   background: #444;
+
   color: white;
 }
