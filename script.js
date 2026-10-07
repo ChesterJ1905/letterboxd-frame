@@ -1102,8 +1102,6 @@ document.addEventListener(
 buildNumber.textContent =
   BUILD_NUMBER;
 
-homeBuildNumber.textContent =
-  `Build ${BUILD_NUMBER}`;
 
 applyVisualSettings();
 
