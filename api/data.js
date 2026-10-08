@@ -441,14 +441,23 @@ function buildYearLists(
         return {
           title: item.name,
           year: item.year,
+
           position:
             item.position,
-          link: item.url,
+
+          link:
+            item.url,
+
           poster:
             matching?.poster ||
             "",
+
           rating:
             matching?.rating ??
+            null,
+
+          watchedDate:
+            matching?.watchedDate ||
             null
         };
       });

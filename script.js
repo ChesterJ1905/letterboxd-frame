@@ -1,4 +1,4 @@
-const BUILD_NUMBER = "1.04";
+const BUILD_NUMBER = "1.05";
 
 const DEFAULT_SETTINGS = {
   modes: {
@@ -59,6 +59,9 @@ const slideDuration =
 const buildNumber =
   document.getElementById("buildNumber");
 
+const homeBuildNumber =
+  document.getElementById("homeBuildNumber");
+
 
 async function loadData() {
   try {
@@ -90,6 +93,7 @@ async function loadData() {
     );
   }
 }
+
 
 function loadSettings() {
   try {
@@ -128,12 +132,14 @@ function loadSettings() {
   }
 }
 
+
 function saveSettings() {
   localStorage.setItem(
     "movieFrameSettings",
     JSON.stringify(settings)
   );
 }
+
 
 function buildSlideQueue() {
   slideQueue = [];
@@ -196,7 +202,8 @@ function buildSlideQueue() {
   }
 
   if (
-    settings.modes.favorites
+    settings.modes.favorites &&
+    data.favorites?.length
   ) {
     slideQueue.push({
       type: "favorites"
@@ -210,10 +217,15 @@ function buildSlideQueue() {
     const years =
       Object.keys(
         data.yearLists
-      ).sort(
-        (a, b) =>
-          Number(b) - Number(a)
-      );
+      )
+        .filter(year =>
+          data.yearLists[year]?.length
+        )
+        .sort(
+          (a, b) =>
+            Number(b) -
+            Number(a)
+        );
 
     for (
       const year of years
@@ -232,6 +244,7 @@ function buildSlideQueue() {
   }
 }
 
+
 function showSlide(index) {
   clearTimeout(slideTimer);
 
@@ -240,7 +253,8 @@ function showSlide(index) {
   }
 
   slideIndex =
-    index %
+    ((index % slideQueue.length) +
+      slideQueue.length) %
     slideQueue.length;
 
   const slide =
@@ -280,29 +294,9 @@ function showSlide(index) {
   } else if (
     slide.type === "yearList"
   ) {
-    const cards = movies
-  .map((movie, index) => {
-    return `
-      <div class="year-movie-card">
-        <div class="year-poster-wrap">
-          <img
-            class="year-movie-poster"
-            src="${escapeHTML(movie.poster || "")}"
-            alt="${escapeHTML(movie.title || "")}"
-          >
-
-          <div class="year-rank">
-            #${movie.position || index + 1}
-          </div>
-        </div>
-
-        <div class="year-movie-title">
-          ${escapeHTML(movie.title || "")}
-        </div>
-      </div>
-    `;
-  })
-  .join("");
+    renderYearList(
+      slide.year
+    );
 
   } else {
     renderEmpty(
@@ -314,6 +308,7 @@ function showSlide(index) {
     scheduleNextSlide();
   }
 }
+
 
 function scheduleNextSlide() {
   clearTimeout(slideTimer);
@@ -328,6 +323,7 @@ function scheduleNextSlide() {
       settings.slideDuration
     );
 }
+
 
 function pickRandomMovie() {
   const movies =
@@ -344,6 +340,7 @@ function pickRandomMovie() {
     )
   ];
 }
+
 
 function renderMovie(
   movie,
@@ -380,18 +377,22 @@ function renderMovie(
           src="${escapeAttribute(
             movie.poster
           )}"
-          alt=""
+          alt="${escapeAttribute(
+            movie.title || ""
+          )}"
         >
       `
       : "";
 
   slideRoot.innerHTML = `
     <section class="movie-slide">
+
       <div class="poster-column">
         ${posterHTML}
       </div>
 
       <div class="movie-info">
+
         <p class="eyebrow">
           ${escapeHTML(label)}
         </p>
@@ -425,10 +426,13 @@ function renderMovie(
         </div>
 
         ${reviewHTML}
+
       </div>
+
     </section>
   `;
 }
+
 
 function renderFacts() {
   setBackgroundImage("");
@@ -438,11 +442,13 @@ function renderFacts() {
 
   slideRoot.innerHTML = `
     <section class="facts-slide">
+
       <div class="facts-heading">
         HENRY'S LETTERBOXD
       </div>
 
       <div class="facts-grid">
+
         <div class="fact-card">
           <span class="fact-number">
             ${facts.totalFilms ?? "—"}
@@ -482,16 +488,33 @@ function renderFacts() {
             THIS WEEK
           </span>
         </div>
+
       </div>
+
     </section>
   `;
 }
+
 
 function renderRecent() {
   setBackgroundImage("");
 
   const movies =
-    (data?.movies || [])
+    [...(data?.movies || [])]
+      .filter(
+        movie =>
+          movie.poster
+      )
+      .sort(
+        (a, b) =>
+          String(
+            b.watchedDate || ""
+          ).localeCompare(
+            String(
+              a.watchedDate || ""
+            )
+          )
+      )
       .slice(0, 12);
 
   if (!movies.length) {
@@ -504,32 +527,35 @@ function renderRecent() {
 
   slideRoot.innerHTML = `
     <section class="recent-slide">
+
       <h2 class="recent-title">
         RECENTLY WATCHED
       </h2>
 
       <div class="poster-grid">
-        ${movies
-          .map(movie => {
-            if (!movie.poster) {
-              return "";
-            }
 
-            return `
+        ${movies
+          .map(
+            movie => `
               <img
                 class="grid-poster"
                 src="${escapeAttribute(
                   movie.poster
                 )}"
-                alt=""
+                alt="${escapeAttribute(
+                  movie.title || ""
+                )}"
               >
-            `;
-          })
+            `
+          )
           .join("")}
+
       </div>
+
     </section>
   `;
 }
+
 
 function renderFavorites() {
   setBackgroundImage("");
@@ -547,33 +573,40 @@ function renderFavorites() {
 
   slideRoot.innerHTML = `
     <section class="recent-slide">
+
       <h2 class="recent-title">
         FAVORITES
       </h2>
 
       <div class="poster-grid">
-        ${favorites
-          .slice(0, 12)
-          .map(movie => {
-            if (!movie.poster) {
-              return "";
-            }
 
-            return `
+        ${favorites
+          .filter(
+            movie =>
+              movie.poster
+          )
+          .slice(0, 12)
+          .map(
+            movie => `
               <img
                 class="grid-poster"
                 src="${escapeAttribute(
                   movie.poster
                 )}"
-                alt=""
+                alt="${escapeAttribute(
+                  movie.title || ""
+                )}"
               >
-            `;
-          })
+            `
+          )
           .join("")}
+
       </div>
+
     </section>
   `;
 }
+
 
 function renderYearList(year) {
   setBackgroundImage("");
@@ -592,7 +625,9 @@ function renderYearList(year) {
 
   slideRoot.innerHTML = `
     <section class="year-slide">
+
       <div class="year-heading">
+
         <div class="year-label">
           HENRY'S MOVIES
         </div>
@@ -604,63 +639,111 @@ function renderYearList(year) {
         <div class="year-subtitle">
           TOP MOVIES OF THE YEAR
         </div>
+
       </div>
 
       <div class="year-poster-grid">
+
         ${movies
           .slice(0, 8)
           .map(
-            (movie, index) => `
-              <div class="year-movie">
-                <div class="year-rank">
-                  #${index + 1}
-                </div>
+            (movie, index) => {
 
-                ${
-                  movie.poster
-                    ? `
-                      <img
-                        class="year-poster"
-                        src="${escapeAttribute(
-                          movie.poster
-                        )}"
-                        alt=""
-                      >
-                    `
-                    : `
-                      <div class="year-poster year-poster-empty">
-                        ${escapeHTML(
-                          movie.title || ""
-                        )}
-                      </div>
-                    `
-                }
-              </div>
-            `
+              const rank =
+                movie.position ||
+                index + 1;
+
+              const watchedText =
+                movie.watchedDate
+                  ? `Watched ${formatDate(
+                      movie.watchedDate
+                    )}`
+                  : "Watch date unavailable";
+
+              return `
+                <div class="year-movie">
+
+                  <div class="year-poster-wrap">
+
+                    ${
+                      movie.poster
+                        ? `
+                          <img
+                            class="year-poster"
+                            src="${escapeAttribute(
+                              movie.poster
+                            )}"
+                            alt="${escapeAttribute(
+                              movie.title || ""
+                            )}"
+                          >
+                        `
+                        : `
+                          <div
+                            class="year-poster year-poster-empty"
+                          >
+                            ${escapeHTML(
+                              movie.title ||
+                              ""
+                            )}
+                          </div>
+                        `
+                    }
+
+                    <div class="year-rank">
+                      #${escapeHTML(
+                        rank
+                      )}
+                    </div>
+
+                  </div>
+
+                  <div class="year-movie-title">
+                    ${escapeHTML(
+                      movie.title || ""
+                    )}
+                  </div>
+
+                  <div class="year-watched-date">
+                    ${escapeHTML(
+                      watchedText
+                    )}
+                  </div>
+
+                </div>
+              `;
+            }
           )
           .join("")}
+
       </div>
+
     </section>
   `;
 }
+
 
 function renderEmpty(message) {
   setBackgroundImage("");
 
   slideRoot.innerHTML = `
     <section class="empty-slide">
+
       <div>
         <h1>
           ${escapeHTML(message)}
         </h1>
       </div>
+
     </section>
   `;
 }
 
+
 function showError(message) {
   renderEmpty(message);
 }
+
 
 function setBackgroundImage(url) {
   if (!url) {
@@ -673,6 +756,7 @@ function setBackgroundImage(url) {
   backgroundImage.style.backgroundImage =
     `url("${url}")`;
 }
+
 
 function makeStars(rating) {
   if (
@@ -698,12 +782,25 @@ function makeStars(rating) {
   );
 }
 
+
 function formatDate(dateString) {
+  if (!dateString) {
+    return "";
+  }
+
   try {
     const date =
       new Date(
         `${dateString}T12:00:00`
       );
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return dateString;
+    }
 
     return date.toLocaleDateString(
       "en-US",
@@ -719,21 +816,40 @@ function formatDate(dateString) {
   }
 }
 
+
 function escapeHTML(value = "") {
   return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 }
+
 
 function escapeAttribute(value = "") {
   return escapeHTML(value);
 }
 
+
 function togglePause() {
   if (
+    settingsPanel &&
     !settingsPanel
       .classList
       .contains("hidden")
@@ -743,7 +859,9 @@ function togglePause() {
 
   paused = !paused;
 
-  clearTimeout(slideTimer);
+  clearTimeout(
+    slideTimer
+  );
 
   if (paused) {
     showPlayStateIcon(
@@ -761,11 +879,18 @@ function togglePause() {
   }
 }
 
+
 function showPlayStateIcon(
   icon,
   autoHide
 ) {
-  clearTimeout(iconTimer);
+  if (!playStateIcon) {
+    return;
+  }
+
+  clearTimeout(
+    iconTimer
+  );
 
   playStateIcon.textContent =
     icon;
@@ -787,8 +912,15 @@ function showPlayStateIcon(
   }
 }
 
+
 function openSettings() {
-  clearTimeout(slideTimer);
+  clearTimeout(
+    slideTimer
+  );
+
+  if (!settingsPanel) {
+    return;
+  }
 
   settingsPanel
     .classList
@@ -809,7 +941,12 @@ function openSettings() {
   populateSettingsUI();
 }
 
+
 function closeSettings() {
+  if (!settingsPanel) {
+    return;
+  }
+
   settingsPanel
     .classList
     .add("hidden");
@@ -821,6 +958,7 @@ function closeSettings() {
     scheduleNextSlide();
   }
 }
+
 
 function populateSettingsUI() {
   document
@@ -836,27 +974,45 @@ function populateSettingsUI() {
       }
     );
 
-  backgroundColorInput.value =
-    settings.backgroundColor;
+  if (backgroundColorInput) {
+    backgroundColorInput.value =
+      settings.backgroundColor;
+  }
 
-  backgroundColorValue.textContent =
-    settings.backgroundColor
-      .toUpperCase();
+  if (backgroundColorValue) {
+    backgroundColorValue.textContent =
+      settings.backgroundColor
+        .toUpperCase();
+  }
 
-  brightnessSlider.value =
-    settings.brightness;
+  if (brightnessSlider) {
+    brightnessSlider.value =
+      settings.brightness;
+  }
 
-  brightnessValue.textContent =
-    `${settings.brightness}%`;
+  if (brightnessValue) {
+    brightnessValue.textContent =
+      `${settings.brightness}%`;
+  }
 
-  slideDuration.value =
-    String(
-      settings.slideDuration
-    );
+  if (slideDuration) {
+    slideDuration.value =
+      String(
+        settings.slideDuration
+      );
+  }
 
-  buildNumber.textContent =
-    BUILD_NUMBER;
+  if (buildNumber) {
+    buildNumber.textContent =
+      BUILD_NUMBER;
+  }
+
+  if (homeBuildNumber) {
+    homeBuildNumber.textContent =
+      BUILD_NUMBER;
+  }
 }
+
 
 function readSettingsFromUI() {
   const modes = {};
@@ -878,17 +1034,23 @@ function readSettingsFromUI() {
     modes,
 
     backgroundColor:
-      backgroundColorInput.value,
+      backgroundColorInput
+        ? backgroundColorInput.value
+        : settings.backgroundColor,
 
     brightness:
-      Number(
-        brightnessSlider.value
-      ),
+      brightnessSlider
+        ? Number(
+            brightnessSlider.value
+          )
+        : settings.brightness,
 
     slideDuration:
-      Number(
-        slideDuration.value
-      )
+      slideDuration
+        ? Number(
+            slideDuration.value
+          )
+        : settings.slideDuration
   };
 
   saveSettings();
@@ -901,25 +1063,36 @@ function readSettingsFromUI() {
   }
 }
 
+
 function getContrastTextColor(hex) {
   const cleanHex =
-    hex.replace("#", "");
+    String(hex)
+      .replace("#", "");
 
   const r =
     parseInt(
-      cleanHex.substring(0, 2),
+      cleanHex.substring(
+        0,
+        2
+      ),
       16
     );
 
   const g =
     parseInt(
-      cleanHex.substring(2, 4),
+      cleanHex.substring(
+        2,
+        4
+      ),
       16
     );
 
   const b =
     parseInt(
-      cleanHex.substring(4, 6),
+      cleanHex.substring(
+        4,
+        6
+      ),
       16
     );
 
@@ -932,6 +1105,7 @@ function getContrastTextColor(hex) {
     ? "#111111"
     : "#ffffff";
 }
+
 
 function applyVisualSettings() {
   const textColor =
@@ -961,94 +1135,139 @@ function applyVisualSettings() {
     );
 }
 
-backgroundColorInput
-  .addEventListener(
-    "input",
-    () => {
-      backgroundColorValue.textContent =
-        backgroundColorInput.value
-          .toUpperCase();
 
-      const previewTextColor =
-        getContrastTextColor(
-          backgroundColorInput.value
-        );
+if (
+  backgroundColorInput
+) {
+  backgroundColorInput
+    .addEventListener(
+      "input",
+      () => {
 
-      document.documentElement
-        .style
-        .setProperty(
-          "--frame-background",
-          backgroundColorInput.value
-        );
+        if (
+          backgroundColorValue
+        ) {
+          backgroundColorValue.textContent =
+            backgroundColorInput
+              .value
+              .toUpperCase();
+        }
 
-      document.documentElement
-        .style
-        .setProperty(
-          "--frame-text",
-          previewTextColor
-        );
-    }
-  );
+        const previewTextColor =
+          getContrastTextColor(
+            backgroundColorInput.value
+          );
 
-brightnessSlider
-  .addEventListener(
-    "input",
-    () => {
-      brightnessValue.textContent =
-        `${brightnessSlider.value}%`;
-    }
-  );
+        document.documentElement
+          .style
+          .setProperty(
+            "--frame-background",
+            backgroundColorInput.value
+          );
 
-document
-  .getElementById(
-    "saveSettings"
-  )
-  .addEventListener(
-    "click",
-    () => {
-      readSettingsFromUI();
-      closeSettings();
-    }
-  );
-
-document
-  .getElementById(
-    "closeSettings"
-  )
-  .addEventListener(
-    "click",
-    closeSettings
-  );
-
-document
-  .getElementById(
-    "resetSettings"
-  )
-  .addEventListener(
-    "click",
-    () => {
-      settings =
-        JSON.parse(
-          JSON.stringify(
-            DEFAULT_SETTINGS
-          )
-        );
-
-      saveSettings();
-      applyVisualSettings();
-      populateSettingsUI();
-
-      if (data) {
-        buildSlideQueue();
-        showSlide(0);
+        document.documentElement
+          .style
+          .setProperty(
+            "--frame-text",
+            previewTextColor
+          );
       }
-    }
+    );
+}
+
+
+if (
+  brightnessSlider
+) {
+  brightnessSlider
+    .addEventListener(
+      "input",
+      () => {
+        if (
+          brightnessValue
+        ) {
+          brightnessValue.textContent =
+            `${brightnessSlider.value}%`;
+        }
+      }
+    );
+}
+
+
+const saveSettingsButton =
+  document.getElementById(
+    "saveSettings"
   );
+
+if (
+  saveSettingsButton
+) {
+  saveSettingsButton
+    .addEventListener(
+      "click",
+      () => {
+        readSettingsFromUI();
+        closeSettings();
+      }
+    );
+}
+
+
+const closeSettingsButton =
+  document.getElementById(
+    "closeSettings"
+  );
+
+if (
+  closeSettingsButton
+) {
+  closeSettingsButton
+    .addEventListener(
+      "click",
+      closeSettings
+    );
+}
+
+
+const resetSettingsButton =
+  document.getElementById(
+    "resetSettings"
+  );
+
+if (
+  resetSettingsButton
+) {
+  resetSettingsButton
+    .addEventListener(
+      "click",
+      () => {
+
+        settings =
+          JSON.parse(
+            JSON.stringify(
+              DEFAULT_SETTINGS
+            )
+          );
+
+        saveSettings();
+
+        applyVisualSettings();
+        populateSettingsUI();
+
+        if (data) {
+          buildSlideQueue();
+          showSlide(0);
+        }
+      }
+    );
+}
+
 
 function handleSettingsTouch(
   event
 ) {
   if (
+    settingsPanel &&
     !settingsPanel
       .classList
       .contains("hidden")
@@ -1062,53 +1281,69 @@ function handleSettingsTouch(
   openSettings();
 }
 
-settingsHotspot
-  .addEventListener(
-    "touchstart",
-    handleSettingsTouch,
-    {
-      passive: false
-    }
-  );
 
-settingsHotspot
-  .addEventListener(
-    "pointerdown",
-    handleSettingsTouch,
-    true
-  );
-
-settingsHotspot
-  .addEventListener(
-    "mousedown",
-    handleSettingsTouch,
-    true
-  );
-
-settingsHotspot
-  .addEventListener(
-    "click",
-    event => {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-  );
-
-document
-  .getElementById("display")
-  .addEventListener(
-    "click",
-    event => {
-      if (
-        event.target ===
-        settingsHotspot
-      ) {
-        return;
+if (
+  settingsHotspot
+) {
+  settingsHotspot
+    .addEventListener(
+      "touchstart",
+      handleSettingsTouch,
+      {
+        passive: false
       }
+    );
 
-      togglePause();
-    }
+  settingsHotspot
+    .addEventListener(
+      "pointerdown",
+      handleSettingsTouch,
+      true
+    );
+
+  settingsHotspot
+    .addEventListener(
+      "mousedown",
+      handleSettingsTouch,
+      true
+    );
+
+  settingsHotspot
+    .addEventListener(
+      "click",
+      event => {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    );
+}
+
+
+const display =
+  document.getElementById(
+    "display"
   );
+
+if (
+  display
+) {
+  display
+    .addEventListener(
+      "click",
+      event => {
+
+        if (
+          event.target ===
+          settingsHotspot
+        ) {
+          return;
+        }
+
+        togglePause();
+      }
+    );
+}
+
 
 document.addEventListener(
   "contextmenu",
@@ -1117,13 +1352,22 @@ document.addEventListener(
   }
 );
 
-buildNumber.textContent =
-  BUILD_NUMBER;
+
+if (buildNumber) {
+  buildNumber.textContent =
+    BUILD_NUMBER;
+}
+
+if (homeBuildNumber) {
+  homeBuildNumber.textContent =
+    BUILD_NUMBER;
+}
 
 
 applyVisualSettings();
 
 loadData();
+
 
 setInterval(
   loadData,
