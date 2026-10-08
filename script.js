@@ -1,16 +1,16 @@
-const BUILD_NUMBER = "1.06";
+const BUILD_NUMBER = "1.10";
 
 const DEFAULT_SETTINGS = {
   modes: {
-    latest: true,
     random: true,
     facts: true,
     topRated: true,
     recent: true,
     favorites: false,
-    yearLists: true
+    yearRecap: true,
+    top100: true,
+    worst: true
   },
-
   backgroundColor: "#0b1117",
   brightness: 100,
   slideDuration: 20000
@@ -18,120 +18,61 @@ const DEFAULT_SETTINGS = {
 
 let data = null;
 let settings = loadSettings();
-
 let slideQueue = [];
 let slideIndex = 0;
-
 let paused = false;
 let slideTimer = null;
 let iconTimer = null;
 
-const slideRoot =
-  document.getElementById("slideRoot");
-
-const backgroundImage =
-  document.getElementById("backgroundImage");
-
-const settingsPanel =
-  document.getElementById("settingsPanel");
-
-const playStateIcon =
-  document.getElementById("playStateIcon");
-
-const settingsHotspot =
-  document.getElementById("settingsHotspot");
-
-const backgroundColorInput =
-  document.getElementById("backgroundColor");
-
-const backgroundColorValue =
-  document.getElementById("backgroundColorValue");
-
-const brightnessSlider =
-  document.getElementById("brightnessSlider");
-
-const brightnessValue =
-  document.getElementById("brightnessValue");
-
-const slideDuration =
-  document.getElementById("slideDuration");
-
-const buildNumber =
-  document.getElementById("buildNumber");
-
-const homeBuildNumber =
-  document.getElementById("homeBuildNumber");
-
+const slideRoot = document.getElementById("slideRoot");
+const backgroundImage = document.getElementById("backgroundImage");
+const settingsPanel = document.getElementById("settingsPanel");
+const playStateIcon = document.getElementById("playStateIcon");
+const settingsHotspot = document.getElementById("settingsHotspot");
+const backgroundColorInput = document.getElementById("backgroundColor");
+const backgroundColorValue = document.getElementById("backgroundColorValue");
+const brightnessSlider = document.getElementById("brightnessSlider");
+const brightnessValue = document.getElementById("brightnessValue");
+const slideDuration = document.getElementById("slideDuration");
+const buildNumber = document.getElementById("buildNumber");
+const homeBuildNumber = document.getElementById("homeBuildNumber");
 
 async function loadData() {
   try {
-    const response =
-      await fetch(
-        "/api/data",
-        {
-          cache: "no-store"
-        }
-      );
-
-    if (!response.ok) {
-      throw new Error(
-        `Server returned ${response.status}`
-      );
-    }
-
-    data =
-      await response.json();
-
+    const response = await fetch("/api/data", { cache: "no-store" });
+    if (!response.ok) throw new Error(`Server returned ${response.status}`);
+    data = await response.json();
     buildSlideQueue();
     showSlide(0);
-
   } catch (error) {
     console.error(error);
-
-    showError(
-      "Unable to load Letterboxd data."
-    );
+    renderEmpty("Unable to load Letterboxd data.");
   }
 }
 
-
 function loadSettings() {
   try {
-    const saved =
-      localStorage.getItem(
-        "movieFrameSettings"
-      );
+    const saved = localStorage.getItem("movieFrameSettings");
+    if (!saved) return structuredCloneFallback(DEFAULT_SETTINGS);
 
-    if (!saved) {
-      return JSON.parse(
-        JSON.stringify(
-          DEFAULT_SETTINGS
-        )
-      );
-    }
-
-    const parsed =
-      JSON.parse(saved);
+    const parsed = JSON.parse(saved);
 
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
-
       modes: {
         ...DEFAULT_SETTINGS.modes,
         ...(parsed.modes || {})
       }
     };
-
   } catch {
-    return JSON.parse(
-      JSON.stringify(
-        DEFAULT_SETTINGS
-      )
-    );
+    return structuredCloneFallback(DEFAULT_SETTINGS);
   }
 }
 
+function structuredCloneFallback(value) {
+  return JSON.parse(JSON.stringify(value));
+}
 
 function saveSettings() {
   localStorage.setItem(
@@ -140,50 +81,43 @@ function saveSettings() {
   );
 }
 
+function stripTags(value = "") {
+  const textarea = document.createElement("textarea");
 
-/* ========================================
-   REAL MOVIE FILTER
-======================================== */
+  textarea.innerHTML =
+    String(value).replace(/<[^>]*>/g, "");
+
+  return textarea.value
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 function isRealMovie(movie) {
   if (
     !movie ||
-    typeof movie !== "object"
-  ) {
-    return false;
-  }
-
-  if (
+    typeof movie !== "object" ||
     Array.isArray(movie.items)
   ) {
     return false;
   }
 
   const title =
-    String(
+    stripTags(
       movie.title ||
       movie.name ||
       ""
-    ).trim();
-
-  if (!title) {
-    return false;
-  }
+    );
 
   const year =
     Number(movie.year);
 
-  if (
-    !Number.isInteger(year) ||
-    year < 1880 ||
-    year > 2100
-  ) {
-    return false;
-  }
-
-  return true;
+  return (
+    Boolean(title) &&
+    Number.isInteger(year) &&
+    year >= 1880 &&
+    year <= 2100
+  );
 }
-
 
 function getRealMovies() {
   return (
@@ -191,73 +125,56 @@ function getRealMovies() {
   ).filter(isRealMovie);
 }
 
-
-/* ========================================
-   SLIDE QUEUE
-======================================== */
+function hasReview(movie) {
+  return stripTags(
+    movie?.review || ""
+  ).length > 0;
+}
 
 function buildSlideQueue() {
   slideQueue = [];
 
-  if (!data) {
-    return;
-  }
-
-  const movies =
-    getRealMovies();
-
-  if (
-    settings.modes.latest &&
-    isRealMovie(data.latest)
-  ) {
-    slideQueue.push({
-      type: "movie",
-      label: "LATEST WATCH",
-      movie: data.latest
-    });
-  }
+  if (!data) return;
 
   if (
     settings.modes.random &&
-    movies.length
+    getRealMovies().some(hasReview)
   ) {
     slideQueue.push({
       type: "random"
     });
   }
 
-  if (
-    settings.modes.facts
-  ) {
+  if (settings.modes.facts) {
     slideQueue.push({
-      type: "facts"
+      type: "factsOverview"
     });
-  }
 
-  if (
-    settings.modes.topRated &&
-    data.topRated?.length
-  ) {
-    const realTopRated =
-      data.topRated
-        .filter(isRealMovie)
-        .slice(0, 5);
+    slideQueue.push({
+      type: "factsActivity"
+    });
 
-    for (
-      const movie of
-      realTopRated
+    if (
+      (data.yearAgoToday || []).length
     ) {
       slideQueue.push({
-        type: "movie",
-        label: "TOP RATED",
-        movie
+        type: "yearAgoToday"
       });
     }
   }
 
   if (
+    settings.modes.topRated &&
+    (data.topRated || []).some(isRealMovie)
+  ) {
+    slideQueue.push({
+      type: "topRated"
+    });
+  }
+
+  if (
     settings.modes.recent &&
-    movies.length
+    getRealMovies().length
   ) {
     slideQueue.push({
       type: "recent"
@@ -266,38 +183,57 @@ function buildSlideQueue() {
 
   if (
     settings.modes.favorites &&
-    data.favorites?.length
+    (data.favorites || []).some(isRealMovie)
   ) {
     slideQueue.push({
-      type: "favorites"
+      type: "favorite"
     });
   }
 
   if (
-    settings.modes.yearLists &&
+    settings.modes.top100 &&
+    (data.top100 || []).length
+  ) {
+    slideQueue.push({
+      type: "top100"
+    });
+  }
+
+  if (
+    settings.modes.worst &&
+    (data.worstRated || []).some(isRealMovie)
+  ) {
+    slideQueue.push({
+      type: "worst"
+    });
+  }
+
+  if (
+    settings.modes.yearRecap &&
     data.yearLists
   ) {
-    const years =
-      Object.keys(
-        data.yearLists
+    Object.keys(
+      data.yearLists
+    )
+      .filter(
+        year =>
+          Array.isArray(
+            data.yearLists[year]
+          ) &&
+          data.yearLists[year].length
       )
-        .filter(year =>
-          data.yearLists[year]?.length
-        )
-        .sort(
-          (a, b) =>
-            Number(b) -
-            Number(a)
-        );
-
-    for (
-      const year of years
-    ) {
-      slideQueue.push({
-        type: "yearList",
-        year
-      });
-    }
+      .sort(
+        (a, b) =>
+          Number(b) -
+          Number(a)
+      )
+      .forEach(
+        year =>
+          slideQueue.push({
+            type: "yearRecap",
+            year
+          })
+      );
   }
 
   if (!slideQueue.length) {
@@ -306,7 +242,6 @@ function buildSlideQueue() {
     });
   }
 }
-
 
 function showSlide(index) {
   clearTimeout(slideTimer);
@@ -324,25 +259,35 @@ function showSlide(index) {
     slideQueue[slideIndex];
 
   if (
-    slide.type === "movie"
-  ) {
-    renderMovie(
-      slide.movie,
-      slide.label
-    );
-
-  } else if (
     slide.type === "random"
   ) {
     renderMovie(
-      pickRandomMovie(),
-      "RANDOM WATCH"
+      pickRandomReviewedMovie(),
+      "RANDOM REVIEW"
     );
 
   } else if (
-    slide.type === "facts"
+    slide.type === "factsOverview"
   ) {
-    renderFacts();
+    renderFactsOverview();
+
+  } else if (
+    slide.type === "factsActivity"
+  ) {
+    renderFactsActivity();
+
+  } else if (
+    slide.type === "yearAgoToday"
+  ) {
+    renderYearAgoToday();
+
+  } else if (
+    slide.type === "topRated"
+  ) {
+    renderMovie(
+      pickRandom(data.topRated),
+      "TOP RATED"
+    );
 
   } else if (
     slide.type === "recent"
@@ -350,14 +295,40 @@ function showSlide(index) {
     renderRecent();
 
   } else if (
-    slide.type === "favorites"
+    slide.type === "favorite"
   ) {
-    renderFavorites();
+    renderMovie(
+      pickRandom(data.favorites),
+      "FAVORITE"
+    );
 
   } else if (
-    slide.type === "yearList"
+    slide.type === "top100"
   ) {
-    renderYearList(
+    const movie =
+      pickRandom(data.top100);
+
+    renderMovie(
+      movie,
+      "TOP 100",
+      {
+        rank:
+          movie?.position
+      }
+    );
+
+  } else if (
+    slide.type === "worst"
+  ) {
+    renderMovie(
+      pickRandom(data.worstRated),
+      "WORST MOVIES"
+    );
+
+  } else if (
+    slide.type === "yearRecap"
+  ) {
+    renderYearRecap(
       slide.year
     );
 
@@ -372,64 +343,59 @@ function showSlide(index) {
   }
 }
 
-
 function scheduleNextSlide() {
   clearTimeout(slideTimer);
 
   slideTimer =
     setTimeout(
-      () => {
+      () =>
         showSlide(
           slideIndex + 1
-        );
-      },
+        ),
       settings.slideDuration
     );
 }
 
+function pickRandom(list) {
+  const clean =
+    (list || [])
+      .filter(isRealMovie);
 
-/* ========================================
-   RANDOM WATCH
-======================================== */
+  if (!clean.length) {
+    return null;
+  }
 
-function pickRandomMovie() {
+  return clean[
+    Math.floor(
+      Math.random() *
+      clean.length
+    )
+  ];
+}
+
+function pickRandomReviewedMovie() {
   const movies =
-    getRealMovies();
+    getRealMovies()
+      .filter(hasReview);
 
   if (!movies.length) {
     return null;
   }
 
-  const movie =
-    movies[
-      Math.floor(
-        Math.random() *
-        movies.length
-      )
-    ];
-
-  console.log(
-    "Random movie:",
-    movie.title,
-    movie.year
-  );
-
-  return movie;
+  return movies[
+    Math.floor(
+      Math.random() *
+      movies.length
+    )
+  ];
 }
-
-
-/* ========================================
-   MOVIE SLIDE
-======================================== */
 
 function renderMovie(
   movie,
-  label
+  label,
+  options = {}
 ) {
-  if (
-    !movie ||
-    !isRealMovie(movie)
-  ) {
+  if (!isRealMovie(movie)) {
     renderEmpty(
       "No movie available."
     );
@@ -438,48 +404,54 @@ function renderMovie(
   }
 
   const title =
-    movie.title ||
-    movie.name ||
-    "";
+    stripTags(
+      movie.title ||
+      movie.name ||
+      ""
+    );
 
-  const year =
-    movie.year || "";
+  const review =
+    stripTags(
+      movie.review ||
+      ""
+    );
+
+  const rank =
+    options.rank
+      ? ` <span class="title-rank">#${escapeHTML(
+          options.rank
+        )}</span>`
+      : "";
 
   setBackgroundImage(
-    movie.poster
+    movie.poster || ""
   );
-
-  const reviewHTML =
-    movie.review
-      ? `
-        <div class="movie-review">
-          “${escapeHTML(
-            movie.review
-          )}”
-        </div>
-      `
-      : "";
-
-  const posterHTML =
-    movie.poster
-      ? `
-        <img
-          class="poster"
-          src="${escapeAttribute(
-            movie.poster
-          )}"
-          alt="${escapeAttribute(
-            title
-          )}"
-        >
-      `
-      : "";
 
   slideRoot.innerHTML = `
     <section class="movie-slide">
 
       <div class="poster-column">
-        ${posterHTML}
+
+        ${
+          movie.poster
+            ? `
+              <img
+                class="poster"
+                src="${escapeAttribute(
+                  movie.poster
+                )}"
+                alt="${escapeAttribute(
+                  title
+                )}"
+              >
+            `
+            : `
+              <div class="poster poster-empty">
+                ${escapeHTML(title)}
+              </div>
+            `
+        }
+
       </div>
 
       <div class="movie-info">
@@ -489,11 +461,13 @@ function renderMovie(
         </p>
 
         <h1 class="movie-title">
-          ${escapeHTML(title)}
+          ${escapeHTML(title)}${rank}
         </h1>
 
         <div class="movie-year">
-          ${escapeHTML(year)}
+          ${escapeHTML(
+            movie.year || ""
+          )}
         </div>
 
         <div class="movie-rating">
@@ -512,7 +486,15 @@ function renderMovie(
           }
         </div>
 
-        ${reviewHTML}
+        ${
+          review
+            ? `
+              <div class="movie-review">
+                “${escapeHTML(review)}”
+              </div>
+            `
+            : ""
+        }
 
       </div>
 
@@ -520,65 +502,96 @@ function renderMovie(
   `;
 }
 
-
-/* ========================================
-   FACTS
-======================================== */
-
-function renderFacts() {
+function renderFactsOverview() {
   setBackgroundImage("");
 
   const facts =
     data?.facts || {};
 
-  slideRoot.innerHTML = `
+  slideRoot.innerHTML =
+    factPage(
+      "HENRY'S LETTERBOXD",
+      [
+        [
+          facts.totalFilms ?? "—",
+          "FILMS"
+        ],
+        [
+          facts.ratings ?? "—",
+          "RATINGS"
+        ],
+        [
+          facts.reviews ?? "—",
+          "REVIEWS"
+        ],
+        [
+          facts.watchlist ?? "—",
+          "WATCHLIST"
+        ]
+      ]
+    );
+}
+
+function renderFactsActivity() {
+  setBackgroundImage("");
+
+  const facts =
+    data?.facts || {};
+
+  slideRoot.innerHTML =
+    factPage(
+      "WATCHING RIGHT NOW",
+      [
+        [
+          facts.thisYear ?? "—",
+          "THIS YEAR"
+        ],
+        [
+          facts.thisMonth ?? "—",
+          "THIS MONTH"
+        ],
+        [
+          facts.thisWeek ?? "—",
+          "THIS WEEK"
+        ],
+        [
+          facts.diaryEntries ?? "—",
+          "DIARY ENTRIES"
+        ]
+      ]
+    );
+}
+
+function factPage(
+  title,
+  items
+) {
+  return `
     <section class="facts-slide">
 
       <div class="facts-heading">
-        HENRY'S LETTERBOXD
+        ${escapeHTML(title)}
       </div>
 
       <div class="facts-grid">
 
-        <div class="fact-card">
-          <span class="fact-number">
-            ${facts.totalFilms ?? "—"}
-          </span>
+        ${items
+          .map(
+            ([number, label]) => `
+              <div class="fact-card">
 
-          <span class="fact-label">
-            FILMS
-          </span>
-        </div>
+                <span class="fact-number">
+                  ${escapeHTML(number)}
+                </span>
 
-        <div class="fact-card">
-          <span class="fact-number">
-            ${facts.thisYear ?? "—"}
-          </span>
+                <span class="fact-label">
+                  ${escapeHTML(label)}
+                </span>
 
-          <span class="fact-label">
-            THIS YEAR
-          </span>
-        </div>
-
-        <div class="fact-card">
-          <span class="fact-number">
-            ${facts.thisMonth ?? "—"}
-          </span>
-
-          <span class="fact-label">
-            THIS MONTH
-          </span>
-        </div>
-
-        <div class="fact-card">
-          <span class="fact-number">
-            ${facts.thisWeek ?? "—"}
-          </span>
-
-          <span class="fact-label">
-            THIS WEEK
-          </span>
-        </div>
+              </div>
+            `
+          )
+          .join("")}
 
       </div>
 
@@ -586,10 +599,24 @@ function renderFacts() {
   `;
 }
 
+function renderYearAgoToday() {
+  const entries =
+    (data?.yearAgoToday || [])
+      .filter(isRealMovie);
 
-/* ========================================
-   RECENT
-======================================== */
+  const movie =
+    pickRandom(entries);
+
+  if (!movie) {
+    renderFactsActivity();
+    return;
+  }
+
+  renderMovie(
+    movie,
+    "ONE YEAR AGO TODAY"
+  );
+}
 
 function renderRecent() {
   setBackgroundImage("");
@@ -638,7 +665,11 @@ function renderRecent() {
                   movie.poster
                 )}"
                 alt="${escapeAttribute(
-                  movie.title || ""
+                  stripTags(
+                    movie.title ||
+                    movie.name ||
+                    ""
+                  )
                 )}"
               >
             `
@@ -651,73 +682,14 @@ function renderRecent() {
   `;
 }
 
-
-/* ========================================
-   FAVORITES
-======================================== */
-
-function renderFavorites() {
-  setBackgroundImage("");
-
-  const favorites =
-    (data?.favorites || [])
-      .filter(isRealMovie);
-
-  if (!favorites.length) {
-    renderEmpty(
-      "Favorites coming soon."
-    );
-
-    return;
-  }
-
-  slideRoot.innerHTML = `
-    <section class="recent-slide">
-
-      <h2 class="recent-title">
-        FAVORITES
-      </h2>
-
-      <div class="poster-grid">
-
-        ${favorites
-          .filter(
-            movie =>
-              movie.poster
-          )
-          .slice(0, 12)
-          .map(
-            movie => `
-              <img
-                class="grid-poster"
-                src="${escapeAttribute(
-                  movie.poster
-                )}"
-                alt="${escapeAttribute(
-                  movie.title || ""
-                )}"
-              >
-            `
-          )
-          .join("")}
-
-      </div>
-
-    </section>
-  `;
-}
-
-
-/* ========================================
-   YEAR LIST
-======================================== */
-
-function renderYearList(year) {
+function renderYearRecap(year) {
   setBackgroundImage("");
 
   const movies =
-    data?.yearLists?.[year] ||
-    [];
+    (
+      data?.yearLists?.[year] ||
+      []
+    ).slice(0, 8);
 
   if (!movies.length) {
     renderEmpty(
@@ -733,7 +705,7 @@ function renderYearList(year) {
       <div class="year-heading">
 
         <div class="year-label">
-          HENRY'S MOVIES
+          YEAR RECAP
         </div>
 
         <h1 class="year-number">
@@ -741,7 +713,7 @@ function renderYearList(year) {
         </h1>
 
         <div class="year-subtitle">
-          TOP MOVIES OF THE YEAR
+          HENRY'S RANKING
         </div>
 
       </div>
@@ -749,20 +721,19 @@ function renderYearList(year) {
       <div class="year-poster-grid">
 
         ${movies
-          .slice(0, 8)
           .map(
             (movie, index) => {
+
+              const title =
+                stripTags(
+                  movie.title ||
+                  movie.name ||
+                  ""
+                );
 
               const rank =
                 movie.position ||
                 index + 1;
-
-              const watchedText =
-                movie.watchedDate
-                  ? `Watched ${formatDate(
-                      movie.watchedDate
-                    )}`
-                  : "Watch date unavailable";
 
               return `
                 <div class="year-movie">
@@ -778,7 +749,7 @@ function renderYearList(year) {
                               movie.poster
                             )}"
                             alt="${escapeAttribute(
-                              movie.title || ""
+                              title
                             )}"
                           >
                         `
@@ -786,32 +757,19 @@ function renderYearList(year) {
                           <div
                             class="year-poster year-poster-empty"
                           >
-                            ${escapeHTML(
-                              movie.title ||
-                              ""
-                            )}
+                            ${escapeHTML(title)}
                           </div>
                         `
                     }
 
                     <div class="year-rank">
-                      #${escapeHTML(
-                        rank
-                      )}
+                      #${escapeHTML(rank)}
                     </div>
 
                   </div>
 
                   <div class="year-movie-title">
-                    ${escapeHTML(
-                      movie.title || ""
-                    )}
-                  </div>
-
-                  <div class="year-watched-date">
-                    ${escapeHTML(
-                      watchedText
-                    )}
+                    ${escapeHTML(title)}
                   </div>
 
                 </div>
@@ -826,53 +784,27 @@ function renderYearList(year) {
   `;
 }
 
-
-/* ========================================
-   EMPTY / ERROR
-======================================== */
-
 function renderEmpty(message) {
   setBackgroundImage("");
 
   slideRoot.innerHTML = `
     <section class="empty-slide">
-
-      <div>
-        <h1>
-          ${escapeHTML(message)}
-        </h1>
-      </div>
-
+      <h1>
+        ${escapeHTML(message)}
+      </h1>
     </section>
   `;
 }
 
-
-function showError(message) {
-  renderEmpty(message);
-}
-
-
-/* ========================================
-   BACKGROUND
-======================================== */
-
 function setBackgroundImage(url) {
-  if (!url) {
-    backgroundImage.style.backgroundImage =
-      "none";
-
-    return;
-  }
-
   backgroundImage.style.backgroundImage =
-    `url("${url}")`;
+    url
+      ? `url("${String(url).replace(
+          /"/g,
+          "%22"
+        )}")`
+      : "none";
 }
-
-
-/* ========================================
-   FORMATTERS
-======================================== */
 
 function makeStars(rating) {
   if (
@@ -886,6 +818,10 @@ function makeStars(rating) {
   const value =
     Number(rating);
 
+  if (!Number.isFinite(value)) {
+    return "";
+  }
+
   const full =
     Math.floor(value);
 
@@ -898,40 +834,35 @@ function makeStars(rating) {
   );
 }
 
-
 function formatDate(dateString) {
   if (!dateString) {
     return "";
   }
 
-  try {
-    const date =
-      new Date(
-        `${dateString}T12:00:00`
-      );
-
-    if (
-      Number.isNaN(
-        date.getTime()
-      )
-    ) {
-      return dateString;
-    }
-
-    return date.toLocaleDateString(
-      "en-US",
-      {
-        month: "long",
-        day: "numeric",
-        year: "numeric"
-      }
+  const date =
+    new Date(
+      `${dateString}T12:00:00`
     );
 
-  } catch {
-    return dateString;
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return stripTags(
+      dateString
+    );
   }
-}
 
+  return date.toLocaleDateString(
+    "en-US",
+    {
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    }
+  );
+}
 
 function escapeHTML(value = "") {
   return String(value)
@@ -957,15 +888,9 @@ function escapeHTML(value = "") {
     );
 }
 
-
 function escapeAttribute(value = "") {
   return escapeHTML(value);
 }
-
-
-/* ========================================
-   PAUSE
-======================================== */
 
 function togglePause() {
   if (
@@ -999,7 +924,6 @@ function togglePause() {
   }
 }
 
-
 function showPlayStateIcon(
   icon,
   autoHide
@@ -1022,20 +946,14 @@ function showPlayStateIcon(
   if (autoHide) {
     iconTimer =
       setTimeout(
-        () => {
+        () =>
           playStateIcon
             .classList
-            .add("hidden");
-        },
+            .add("hidden"),
         1800
       );
   }
 }
-
-
-/* ========================================
-   SETTINGS
-======================================== */
 
 function openSettings() {
   clearTimeout(
@@ -1065,7 +983,6 @@ function openSettings() {
   populateSettingsUI();
 }
 
-
 function closeSettings() {
   if (!settingsPanel) {
     return;
@@ -1082,7 +999,6 @@ function closeSettings() {
     scheduleNextSlide();
   }
 }
-
 
 function populateSettingsUI() {
   document
@@ -1133,10 +1049,9 @@ function populateSettingsUI() {
 
   if (homeBuildNumber) {
     homeBuildNumber.textContent =
-      BUILD_NUMBER;
+      `Build ${BUILD_NUMBER}`;
   }
 }
-
 
 function readSettingsFromUI() {
   const modes = {};
@@ -1178,24 +1093,19 @@ function readSettingsFromUI() {
   };
 
   saveSettings();
-
   applyVisualSettings();
-
-  if (data) {
-    buildSlideQueue();
-    showSlide(0);
-  }
+  buildSlideQueue();
+  showSlide(0);
 }
 
-
 function getContrastTextColor(hex) {
-  const cleanHex =
+  const clean =
     String(hex)
       .replace("#", "");
 
   const r =
     parseInt(
-      cleanHex.substring(
+      clean.substring(
         0,
         2
       ),
@@ -1204,7 +1114,7 @@ function getContrastTextColor(hex) {
 
   const g =
     parseInt(
-      cleanHex.substring(
+      clean.substring(
         2,
         4
       ),
@@ -1213,7 +1123,7 @@ function getContrastTextColor(hex) {
 
   const b =
     parseInt(
-      cleanHex.substring(
+      clean.substring(
         4,
         6
       ),
@@ -1221,15 +1131,14 @@ function getContrastTextColor(hex) {
     );
 
   const luminance =
-    (0.299 * r) +
-    (0.587 * g) +
-    (0.114 * b);
+    0.299 * r +
+    0.587 * g +
+    0.114 * b;
 
   return luminance > 160
     ? "#111111"
     : "#ffffff";
 }
-
 
 function applyVisualSettings() {
   const textColor =
@@ -1259,11 +1168,6 @@ function applyVisualSettings() {
     );
 }
 
-
-/* ========================================
-   SETTINGS EVENTS
-======================================== */
-
 if (
   backgroundColorInput
 ) {
@@ -1281,11 +1185,6 @@ if (
               .toUpperCase();
         }
 
-        const previewTextColor =
-          getContrastTextColor(
-            backgroundColorInput.value
-          );
-
         document.documentElement
           .style
           .setProperty(
@@ -1297,12 +1196,13 @@ if (
           .style
           .setProperty(
             "--frame-text",
-            previewTextColor
+            getContrastTextColor(
+              backgroundColorInput.value
+            )
           );
       }
     );
 }
-
 
 if (
   brightnessSlider
@@ -1311,89 +1211,66 @@ if (
     .addEventListener(
       "input",
       () => {
+
         if (
           brightnessValue
         ) {
           brightnessValue.textContent =
             `${brightnessSlider.value}%`;
         }
-      }
-    );
-}
 
-
-const saveSettingsButton =
-  document.getElementById(
-    "saveSettings"
-  );
-
-if (
-  saveSettingsButton
-) {
-  saveSettingsButton
-    .addEventListener(
-      "click",
-      () => {
-        readSettingsFromUI();
-        closeSettings();
-      }
-    );
-}
-
-
-const closeSettingsButton =
-  document.getElementById(
-    "closeSettings"
-  );
-
-if (
-  closeSettingsButton
-) {
-  closeSettingsButton
-    .addEventListener(
-      "click",
-      closeSettings
-    );
-}
-
-
-const resetSettingsButton =
-  document.getElementById(
-    "resetSettings"
-  );
-
-if (
-  resetSettingsButton
-) {
-  resetSettingsButton
-    .addEventListener(
-      "click",
-      () => {
-
-        settings =
-          JSON.parse(
-            JSON.stringify(
-              DEFAULT_SETTINGS
-            )
+        document.documentElement
+          .style
+          .setProperty(
+            "--frame-brightness",
+            Number(
+              brightnessSlider.value
+            ) / 100
           );
-
-        saveSettings();
-
-        applyVisualSettings();
-        populateSettingsUI();
-
-        if (data) {
-          buildSlideQueue();
-          showSlide(0);
-        }
       }
     );
 }
 
+document
+  .getElementById(
+    "saveSettings"
+  )
+  ?.addEventListener(
+    "click",
+    () => {
+      readSettingsFromUI();
+      closeSettings();
+    }
+  );
 
-/* ========================================
-   SECRET SETTINGS HOTSPOT
-======================================== */
+document
+  .getElementById(
+    "closeSettings"
+  )
+  ?.addEventListener(
+    "click",
+    closeSettings
+  );
+
+document
+  .getElementById(
+    "resetSettings"
+  )
+  ?.addEventListener(
+    "click",
+    () => {
+      settings =
+        structuredCloneFallback(
+          DEFAULT_SETTINGS
+        );
+
+      saveSettings();
+      applyVisualSettings();
+      populateSettingsUI();
+      buildSlideQueue();
+      showSlide(0);
+    }
+  );
 
 function handleSettingsTouch(
   event
@@ -1413,10 +1290,7 @@ function handleSettingsTouch(
   openSettings();
 }
 
-
-if (
-  settingsHotspot
-) {
+if (settingsHotspot) {
   settingsHotspot
     .addEventListener(
       "touchstart",
@@ -1450,60 +1324,34 @@ if (
     );
 }
 
-
-/* ========================================
-   DISPLAY TAP
-======================================== */
-
-const display =
-  document.getElementById(
+document
+  .getElementById(
     "display"
-  );
+  )
+  ?.addEventListener(
+    "click",
+    event => {
 
-if (
-  display
-) {
-  display
-    .addEventListener(
-      "click",
-      event => {
-
-        if (
-          event.target ===
-          settingsHotspot
-        ) {
-          return;
-        }
-
-        togglePause();
+      if (
+        event.target ===
+        settingsHotspot
+      ) {
+        return;
       }
-    );
-}
 
+      togglePause();
+    }
+  );
 
 document.addEventListener(
   "contextmenu",
-  event => {
-    event.preventDefault();
-  }
+  event =>
+    event.preventDefault()
 );
 
-
-if (buildNumber) {
-  buildNumber.textContent =
-    BUILD_NUMBER;
-}
-
-if (homeBuildNumber) {
-  homeBuildNumber.textContent =
-    BUILD_NUMBER;
-}
-
-
 applyVisualSettings();
-
+populateSettingsUI();
 loadData();
-
 
 setInterval(
   loadData,

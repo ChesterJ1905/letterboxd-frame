@@ -2,104 +2,44 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Henry's Movie Frame</title>
-
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
   <main id="display">
     <div id="backgroundImage" class="background-image"></div>
     <div class="background-overlay"></div>
-
     <div id="slideRoot"></div>
-
-    <div id="playStateIcon" class="play-state-icon hidden">
-      ⏸
-    </div>
-
-    <button
-      id="settingsHotspot"
-      aria-label="Open settings"
-    ></button>
-
-    <div id="homeBuildNumber" class="home-build-number">
-      Build —
-    </div>
+    <div id="playStateIcon" class="play-state-icon hidden">⏸</div>
+    <button id="settingsHotspot" aria-label="Open settings"></button>
+    <div id="homeBuildNumber" class="home-build-number">Build —</div>
   </main>
 
   <div id="settingsPanel" class="settings-panel hidden">
     <div class="settings-box">
-
       <div class="settings-header">
         <h2>Frame Settings</h2>
-
-        <button
-          id="closeSettings"
-          class="close-button"
-        >
-          ×
-        </button>
+        <button id="closeSettings" class="close-button">×</button>
       </div>
 
       <section class="settings-section">
         <h3>Slideshow Modes</h3>
-
-        <label class="toggle-row">
-          <span>Latest Watch</span>
-          <input type="checkbox" data-mode="latest">
-        </label>
-
-        <label class="toggle-row">
-          <span>Random Movie</span>
-          <input type="checkbox" data-mode="random">
-        </label>
-
-        <label class="toggle-row">
-          <span>Facts</span>
-          <input type="checkbox" data-mode="facts">
-        </label>
-
-        <label class="toggle-row">
-          <span>Top Rated</span>
-          <input type="checkbox" data-mode="topRated">
-        </label>
-
-        <label class="toggle-row">
-          <span>Recently Watched</span>
-          <input type="checkbox" data-mode="recent">
-        </label>
-
-        <label class="toggle-row">
-          <span>Favorites</span>
-          <input type="checkbox" data-mode="favorites">
-        </label>
-
-        <label class="toggle-row">
-          <span>Year Lists</span>
-          <input type="checkbox" data-mode="yearLists">
-        </label>
+        <label class="toggle-row"><span>Random Review</span><input type="checkbox" data-mode="random"></label>
+        <label class="toggle-row"><span>Facts</span><input type="checkbox" data-mode="facts"></label>
+        <label class="toggle-row"><span>Top Rated</span><input type="checkbox" data-mode="topRated"></label>
+        <label class="toggle-row"><span>Recently Watched</span><input type="checkbox" data-mode="recent"></label>
+        <label class="toggle-row"><span>Favorites</span><input type="checkbox" data-mode="favorites"></label>
+        <label class="toggle-row"><span>Year Recap</span><input type="checkbox" data-mode="yearRecap"></label>
+        <label class="toggle-row"><span>Top 100</span><input type="checkbox" data-mode="top100"></label>
+        <label class="toggle-row"><span>Worst Movies</span><input type="checkbox" data-mode="worst"></label>
       </section>
 
       <section class="settings-section">
         <h3>Background Color</h3>
-
         <div class="color-setting">
-          <input
-            id="backgroundColor"
-            type="color"
-            value="#0b1117"
-          >
-
-          <span id="backgroundColorValue">
-            #0B1117
-          </span>
+          <input id="backgroundColor" type="color" value="#0b1117">
+          <span id="backgroundColorValue">#0B1117</span>
         </div>
       </section>
 
@@ -108,20 +48,11 @@
           <h3>Brightness</h3>
           <span id="brightnessValue">100%</span>
         </div>
-
-        <input
-          id="brightnessSlider"
-          type="range"
-          min="20"
-          max="100"
-          step="5"
-          value="100"
-        >
+        <input id="brightnessSlider" type="range" min="20" max="100" step="5" value="100">
       </section>
 
       <section class="settings-section">
         <h3>Slide Time</h3>
-
         <select id="slideDuration">
           <option value="10000">10 seconds</option>
           <option value="15000">15 seconds</option>
@@ -132,26 +63,13 @@
       </section>
 
       <section class="settings-section build-section">
-        <span>Build</span>
-        <span id="buildNumber">—</span>
+        <span>Build</span><span id="buildNumber">—</span>
       </section>
 
       <section class="settings-actions">
-        <button
-          id="resetSettings"
-          class="secondary-button"
-        >
-          Reset Settings
-        </button>
-
-        <button
-          id="saveSettings"
-          class="primary-button"
-        >
-          Save
-        </button>
+        <button id="resetSettings" class="secondary-button">Reset Settings</button>
+        <button id="saveSettings" class="primary-button">Save</button>
       </section>
-
     </div>
   </div>
 

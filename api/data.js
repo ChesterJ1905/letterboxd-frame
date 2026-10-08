@@ -1,135 +1,307 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const USERNAME = "Henry_Johnston";
-const RSS_URL = `https://letterboxd.com/${USERNAME}/rss/`;
-const EXPORT_PATH = path.join(
-  process.cwd(),
-  "data",
-  "letterboxd-export.json"
-);
+const USERNAME =
+  "Henry_Johnston";
+
+const RSS_URL =
+  `https://letterboxd.com/${USERNAME}/rss/`;
+
+const PROFILE_URL =
+  `https://letterboxd.com/${USERNAME.toLowerCase()}/`;
+
+const EXPORT_PATH =
+  path.join(
+    process.cwd(),
+    "data",
+    "letterboxd-export.json"
+  );
 
 let exportData = null;
 
 function loadExportData() {
   if (!exportData) {
-    exportData = JSON.parse(
-      fs.readFileSync(EXPORT_PATH, "utf8")
-    );
+    exportData =
+      JSON.parse(
+        fs.readFileSync(
+          EXPORT_PATH,
+          "utf8"
+        )
+      );
   }
 
   return exportData;
 }
 
-function decodeHTML(value = "") {
+function decodeHTML(
+  value = ""
+) {
   return String(value)
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#x27;/g, "'")
-    .replace(/&#x2F;/g, "/")
-    .replace(/&#8217;/g, "’")
-    .replace(/&#8216;/g, "‘")
-    .replace(/&#8220;/g, "“")
-    .replace(/&#8221;/g, "”");
+    .replace(
+      /<!\[CDATA\[([\s\S]*?)\]\]>/g,
+      "$1"
+    )
+    .replace(
+      /&amp;/g,
+      "&"
+    )
+    .replace(
+      /&lt;/g,
+      "<"
+    )
+    .replace(
+      /&gt;/g,
+      ">"
+    )
+    .replace(
+      /&quot;/g,
+      '"'
+    )
+    .replace(
+      /&#39;/g,
+      "'"
+    )
+    .replace(
+      /&#x27;/g,
+      "'"
+    )
+    .replace(
+      /&#x2F;/g,
+      "/"
+    )
+    .replace(
+      /&#8217;/g,
+      "’"
+    )
+    .replace(
+      /&#8216;/g,
+      "‘"
+    )
+    .replace(
+      /&#8220;/g,
+      "“"
+    )
+    .replace(
+      /&#8221;/g,
+      "”"
+    );
 }
 
-function stripHTML(value = "") {
+function stripHTML(
+  value = ""
+) {
   return decodeHTML(value)
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<[^>]*>/g, " ")
-    .replace(/\s+/g, " ")
+    .replace(
+      /<br\s*\/?>/gi,
+      "\n"
+    )
+    .replace(
+      /<[^>]*>/g,
+      " "
+    )
+    .replace(
+      /\s+/g,
+      " "
+    )
     .trim();
 }
 
-function getTag(xml, tag) {
-  const escaped = tag.replace(
-    /[.*+?^${}()|[\]\\]/g,
-    "\\$&"
-  );
+function getTag(
+  xml,
+  tag
+) {
+  const escaped =
+    tag.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&"
+    );
 
-  const match = xml.match(
-    new RegExp(
-      `<${escaped}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${escaped}>`,
-      "i"
-    )
-  );
+  const match =
+    xml.match(
+      new RegExp(
+        `<${escaped}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${escaped}>`,
+        "i"
+      )
+    );
 
   return match
-    ? decodeHTML(match[1]).trim()
+    ? decodeHTML(
+        match[1]
+      ).trim()
     : "";
 }
 
-function extractPoster(html = "") {
-  const decoded = decodeHTML(html);
+function extractPoster(
+  html = ""
+) {
+  const decoded =
+    decodeHTML(html);
 
-  const match = decoded.match(
-    /<img[^>]+src=["']([^"']+)["']/i
-  );
+  const match =
+    decoded.match(
+      /<img[^>]+src=["']([^"']+)["']/i
+    );
 
-  return match ? match[1] : "";
+  return match
+    ? match[1]
+    : "";
 }
 
-function normalizeKey(name, year) {
-  return `${String(name || "")
-    .trim()
-    .toLowerCase()}||${String(year || "").trim()}`;
+function normalizeKey(
+  name,
+  year
+) {
+  return `${
+    stripHTML(name)
+      .toLowerCase()
+  }||${
+    String(
+      year || ""
+    ).trim()
+  }`;
 }
 
-function parseRSSItem(itemXML) {
+function normalizeTitle(name) {
+  return stripHTML(name)
+    .toLowerCase();
+}
+
+function parseRSSItem(
+  itemXML
+) {
   const title =
-    getTag(itemXML, "letterboxd:filmTitle") ||
-    getTag(itemXML, "title");
+    getTag(
+      itemXML,
+      "letterboxd:filmTitle"
+    ) ||
+    getTag(
+      itemXML,
+      "title"
+    );
 
   const year =
-    getTag(itemXML, "letterboxd:filmYear") ||
+    getTag(
+      itemXML,
+      "letterboxd:filmYear"
+    ) ||
     "";
 
   const watchedDate =
-    getTag(itemXML, "letterboxd:watchedDate") ||
+    getTag(
+      itemXML,
+      "letterboxd:watchedDate"
+    ) ||
     "";
 
   const ratingRaw =
-    getTag(itemXML, "letterboxd:memberRating") ||
+    getTag(
+      itemXML,
+      "letterboxd:memberRating"
+    ) ||
     "";
 
   const description =
-    getTag(itemXML, "description") ||
-    getTag(itemXML, "content:encoded") ||
+    getTag(
+      itemXML,
+      "description"
+    ) ||
+    getTag(
+      itemXML,
+      "content:encoded"
+    ) ||
     "";
 
   let review =
-    getTag(itemXML, "letterboxd:memberReview") ||
+    getTag(
+      itemXML,
+      "letterboxd:memberReview"
+    ) ||
     "";
 
-  if (!review && description) {
-    const text = decodeHTML(description)
-      .replace(
-        /<p>\s*<img[\s\S]*?<\/p>/i,
-        ""
-      )
-      .replace(/<img[^>]*>/gi, "");
+  if (
+    !review &&
+    description
+  ) {
+    const decoded =
+      decodeHTML(
+        description
+      );
 
-    review = stripHTML(text);
+    const paragraphs =
+      [
+        ...decoded.matchAll(
+          /<p[^>]*>([\s\S]*?)<\/p>/gi
+        )
+      ];
+
+    const textParagraphs =
+      paragraphs
+        .map(
+          match =>
+            stripHTML(
+              match[1]
+            )
+        )
+        .filter(
+          text =>
+            text &&
+            !/^watched on /i
+              .test(text)
+        );
+
+    if (
+      textParagraphs.length > 1
+    ) {
+      review =
+        textParagraphs
+          .slice(1)
+          .join("\n\n");
+    }
   }
 
   return {
-    title: stripHTML(title),
-    year: Number(year) || year || null,
-    watchedDate: watchedDate || null,
-    rating: ratingRaw
-      ? Number(ratingRaw)
-      : null,
-    review: review || null,
-    poster: extractPoster(description),
-    link:
-      getTag(itemXML, "link") ||
+    title:
+      stripHTML(title),
+
+    year:
+      Number(year) ||
+      year ||
       null,
+
+    watchedDate:
+      watchedDate ||
+      null,
+
+    rating:
+      ratingRaw
+        ? Number(
+            ratingRaw
+          )
+        : null,
+
+    review:
+      stripHTML(
+        review
+      ) ||
+      null,
+
+    poster:
+      extractPoster(
+        description
+      ),
+
+    link:
+      getTag(
+        itemXML,
+        "link"
+      ) ||
+      null,
+
     pubDate:
-      getTag(itemXML, "pubDate") ||
+      getTag(
+        itemXML,
+        "pubDate"
+      ) ||
       null
   };
 }
@@ -138,35 +310,47 @@ function parseRSS(xml) {
   const items =
     xml.match(
       /<item>[\s\S]*?<\/item>/gi
-    ) || [];
+    ) ||
+    [];
 
   return items
-    .map(parseRSSItem)
-    .filter(movie => movie.title);
+    .map(
+      parseRSSItem
+    )
+    .filter(
+      movie =>
+        movie.title &&
+        movie.year
+    );
 }
 
 async function getRSSMovies() {
   try {
-    const response = await fetch(
-      RSS_URL,
-      {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 HenryMovieFrame/1.0",
-          Accept:
-            "application/rss+xml, application/xml, text/xml, */*"
-        },
-        cache: "no-store"
-      }
-    );
+    const response =
+      await fetch(
+        RSS_URL,
+        {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 HenryMovieFrame/1.10",
+
+            Accept:
+              "application/rss+xml, application/xml, text/xml, */*"
+          },
+
+          cache:
+            "no-store"
+        }
+      );
 
     if (!response.ok) {
       return [];
     }
 
-    const xml = await response.text();
+    return parseRSS(
+      await response.text()
+    );
 
-    return parseRSS(xml);
   } catch (error) {
     console.error(
       "RSS fetch failed:",
@@ -177,19 +361,47 @@ async function getRSSMovies() {
   }
 }
 
-function exportMovieToFrontend(movie) {
+function exportMovieToFrontend(
+  movie
+) {
   return {
-    title: movie.name,
-    year: movie.year,
-    rating: movie.rating,
-    review: movie.review,
+    title:
+      stripHTML(
+        movie.name
+      ),
+
+    year:
+      movie.year,
+
+    rating:
+      movie.rating,
+
+    review:
+      stripHTML(
+        movie.review ||
+        ""
+      ) ||
+      null,
+
     watchedDate:
-      movie.lastWatchedDate,
-   poster: movie.poster || "",
-    link: movie.filmUrl,
-    liked: !!movie.liked,
+      movie.lastWatchedDate ||
+      null,
+
+    poster:
+      movie.poster ||
+      "",
+
+    link:
+      movie.filmUrl ||
+      null,
+
+    liked:
+      !!movie.liked,
+
     watchCount:
-      movie.watchCount || 0,
+      movie.watchCount ||
+      0,
+
     rewatched:
       !!movie.rewatched
   };
@@ -199,83 +411,144 @@ function mergeFullHistory(
   baseMovies,
   rssMovies
 ) {
-  const map = new Map();
+  const map =
+    new Map();
 
-  for (const movie of baseMovies) {
+  for (
+    const movie
+    of baseMovies
+  ) {
     map.set(
       normalizeKey(
         movie.title,
         movie.year
       ),
-      { ...movie }
+      {
+        ...movie
+      }
     );
   }
 
-  for (const rssMovie of rssMovies) {
-    const key = normalizeKey(
-      rssMovie.title,
-      rssMovie.year
-    );
+  for (
+    const rssMovie
+    of rssMovies
+  ) {
+    const key =
+      normalizeKey(
+        rssMovie.title,
+        rssMovie.year
+      );
 
-    const existing = map.get(key);
+    const existing =
+      map.get(key);
 
     if (existing) {
-      map.set(key, {
-        ...existing,
-        rating:
-          rssMovie.rating ??
-          existing.rating,
-        review:
-          rssMovie.review ||
-          existing.review,
-        watchedDate:
-          rssMovie.watchedDate ||
-          existing.watchedDate,
-        poster:
-          rssMovie.poster ||
-          existing.poster,
-        link:
-          existing.link ||
-          rssMovie.link
-      });
+      map.set(
+        key,
+        {
+          ...existing,
+
+          rating:
+            rssMovie.rating ??
+            existing.rating,
+
+          review:
+            rssMovie.review ||
+            existing.review,
+
+          watchedDate:
+            rssMovie.watchedDate ||
+            existing.watchedDate,
+
+          poster:
+            rssMovie.poster ||
+            existing.poster,
+
+          link:
+            existing.link ||
+            rssMovie.link,
+
+          watchCount:
+            Math.max(
+              existing.watchCount ||
+              1,
+              1
+            )
+        }
+      );
+
     } else {
-      map.set(key, {
-        ...rssMovie,
-        liked: false,
-        watchCount: 1,
-        rewatched: false
-      });
+      map.set(
+        key,
+        {
+          ...rssMovie,
+
+          liked:
+            false,
+
+          watchCount:
+            1,
+
+          rewatched:
+            false
+        }
+      );
     }
   }
 
-  return [...map.values()];
+  return [
+    ...map.values()
+  ];
 }
 
 function mergeDiary(
   exportDiary,
-  rssMovies
+  rssMovies,
+  movieMap
 ) {
-  const items =
-    exportDiary.map(item => ({
-      title: item.name,
-      year: item.year,
-      watchedDate:
-        item.watchedDate,
-      rating: item.rating,
-      review: null
-    }));
+  const entries =
+    exportDiary.map(
+      item => ({
+        title:
+          stripHTML(
+            item.name
+          ),
 
-  const seen = new Set(
-    items.map(item =>
-      `${normalizeKey(
-        item.title,
-        item.year
-      )}||${item.watchedDate || ""}`
-    )
-  );
+        year:
+          item.year,
 
-  for (const item of rssMovies) {
-    if (!item.watchedDate) {
+        watchedDate:
+          item.watchedDate,
+
+        rating:
+          item.rating,
+
+        review:
+          null
+      })
+    );
+
+  const seen =
+    new Set(
+      entries.map(
+        item =>
+          `${normalizeKey(
+            item.title,
+            item.year
+          )}||${
+            item.watchedDate ||
+            ""
+          }`
+      )
+    );
+
+  for (
+    const item
+    of rssMovies
+  ) {
+    if (
+      !item.watchedDate
+    ) {
       continue;
     }
 
@@ -283,23 +556,63 @@ function mergeDiary(
       `${normalizeKey(
         item.title,
         item.year
-      )}||${item.watchedDate}`;
+      )}||${
+        item.watchedDate
+      }`;
 
-    if (!seen.has(key)) {
+    if (
+      !seen.has(key)
+    ) {
       seen.add(key);
 
-      items.push({
-        title: item.title,
-        year: item.year,
+      entries.push({
+        title:
+          item.title,
+
+        year:
+          item.year,
+
         watchedDate:
           item.watchedDate,
-        rating: item.rating,
-        review: item.review
+
+        rating:
+          item.rating,
+
+        review:
+          item.review
       });
     }
   }
 
-  return items;
+  return entries.map(
+    entry => {
+
+      const movie =
+        movieMap.get(
+          normalizeKey(
+            entry.title,
+            entry.year
+          )
+        );
+
+      return {
+        ...entry,
+
+        poster:
+          movie?.poster ||
+          "",
+
+        review:
+          entry.review ||
+          movie?.review ||
+          null,
+
+        link:
+          movie?.link ||
+          null
+      };
+    }
+  );
 }
 
 function getTodayInNewYork() {
@@ -309,20 +622,28 @@ function getTodayInNewYork() {
       {
         timeZone:
           "America/New_York",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
+
+        year:
+          "numeric",
+
+        month:
+          "2-digit",
+
+        day:
+          "2-digit"
       }
-    ).formatToParts(
-      new Date()
-    );
+    )
+      .formatToParts(
+        new Date()
+      );
 
   const values =
     Object.fromEntries(
       parts
         .filter(
           part =>
-            part.type !== "literal"
+            part.type !==
+            "literal"
         )
         .map(
           part => [
@@ -335,101 +656,194 @@ function getTodayInNewYork() {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
-function daysBetween(a, b) {
-  const one = new Date(
-    `${a}T12:00:00Z`
-  );
+function previousYearDate(
+  today
+) {
+  const [
+    year,
+    month,
+    day
+  ] =
+    today
+      .split("-")
+      .map(Number);
 
-  const two = new Date(
-    `${b}T12:00:00Z`
-  );
+  const previous =
+    new Date(
+      Date.UTC(
+        year - 1,
+        month - 1,
+        day
+      )
+    );
+
+  return `${
+    previous.getUTCFullYear()
+  }-${
+    String(
+      previous.getUTCMonth() +
+      1
+    ).padStart(
+      2,
+      "0"
+    )
+  }-${
+    String(
+      previous.getUTCDate()
+    ).padStart(
+      2,
+      "0"
+    )
+  }`;
+}
+
+function daysBetween(
+  a,
+  b
+) {
+  const one =
+    new Date(
+      `${a}T12:00:00Z`
+    );
+
+  const two =
+    new Date(
+      `${b}T12:00:00Z`
+    );
 
   return Math.floor(
-    (two - one) / 86400000
+    (
+      two -
+      one
+    ) /
+    86400000
   );
 }
 
 function calculateFacts(
   snapshot,
-  combinedDiary
+  combinedDiary,
+  movies
 ) {
   const today =
     getTodayInNewYork();
 
   const currentYear =
-    today.slice(0, 4);
+    today.slice(
+      0,
+      4
+    );
 
   const currentMonth =
-    today.slice(0, 7);
+    today.slice(
+      0,
+      7
+    );
 
   const valid =
-    combinedDiary.filter(
-      item => item.watchedDate
-    );
+    combinedDiary
+      .filter(
+        item =>
+          item.watchedDate
+      );
 
   return {
     totalFilms:
-      snapshot.movies.length,
+      movies.length,
 
     diaryEntries:
       valid.length,
 
     thisYear:
-      valid.filter(item =>
-        item.watchedDate.startsWith(
-          currentYear
+      valid
+        .filter(
+          item =>
+            item.watchedDate
+              .startsWith(
+                currentYear
+              )
         )
-      ).length,
+        .length,
 
     thisMonth:
-      valid.filter(item =>
-        item.watchedDate.startsWith(
-          currentMonth
+      valid
+        .filter(
+          item =>
+            item.watchedDate
+              .startsWith(
+                currentMonth
+              )
         )
-      ).length,
+        .length,
 
     thisWeek:
-      valid.filter(item => {
-        const difference =
-          daysBetween(
-            item.watchedDate,
-            today
-          );
+      valid
+        .filter(
+          item => {
+            const difference =
+              daysBetween(
+                item.watchedDate,
+                today
+              );
 
-        return (
-          difference >= 0 &&
-          difference <= 6
-        );
-      }).length,
+            return (
+              difference >= 0 &&
+              difference <= 6
+            );
+          }
+        )
+        .length,
 
     ratings:
-      snapshot.movies.filter(
-        movie =>
-          movie.rating !== null
-      ).length,
+      movies
+        .filter(
+          movie =>
+            movie.rating !==
+            null &&
+            movie.rating !==
+            undefined
+        )
+        .length,
 
     reviews:
-      snapshot.reviews.length,
+      movies
+        .filter(
+          movie =>
+            stripHTML(
+              movie.review ||
+              ""
+            )
+        )
+        .length,
 
     watchlist:
-      snapshot.watchlist.length
+      snapshot
+        .watchlist
+        .length
   };
 }
 
-function buildYearLists(
+function buildSnapshotTop100(
   snapshot,
   movieMap
 ) {
-  const result = {};
-
-  for (
-    const [year, list]
-    of Object.entries(
-      snapshot.yearLists || {}
-    )
+  if (
+    !snapshot
+      .top100
+      ?.items
   ) {
-    result[year] =
-      list.items.map(item => {
+    return [];
+  }
+
+  return snapshot
+    .top100
+    .items
+    .map(
+      (
+        item,
+        index
+      ) => {
+
         const matching =
           movieMap.get(
             normalizeKey(
@@ -439,66 +853,480 @@ function buildYearLists(
           );
 
         return {
-          title: item.name,
-          year: item.year,
+          title:
+            stripHTML(
+              item.name
+            ),
+
+          year:
+            item.year,
 
           position:
-            item.position,
+            item.position ||
+            index + 1,
 
           link:
             item.url,
 
           poster:
             matching?.poster ||
+            item.poster ||
             "",
 
           rating:
             matching?.rating ??
             null,
 
+          review:
+            matching?.review ||
+            null,
+
           watchedDate:
             matching?.watchedDate ||
             null
         };
+      }
+    );
+}
+
+function getAttr(
+  block,
+  name
+) {
+  const match =
+    block.match(
+      new RegExp(
+        `${name}=["']([^"']+)["']`,
+        "i"
+      )
+    );
+
+  return match
+    ? decodeHTML(
+        match[1]
+      ).trim()
+    : "";
+}
+
+function parsePublicListHTML(
+  html,
+  movieMap
+) {
+  const blocks =
+    html.match(
+      /<li[^>]*class=["'][^"']*poster-container[^"']*["'][\s\S]*?<\/li>/gi
+    ) ||
+    [];
+
+  const byTitle =
+    new Map();
+
+  for (
+    const movie
+    of movieMap.values()
+  ) {
+    const key =
+      normalizeTitle(
+        movie.title
+      );
+
+    if (
+      !byTitle.has(key)
+    ) {
+      byTitle.set(
+        key,
+        []
+      );
+    }
+
+    byTitle
+      .get(key)
+      .push(movie);
+  }
+
+  const results =
+    [];
+
+  for (
+    const block
+    of blocks
+  ) {
+    let title =
+      getAttr(
+        block,
+        "data-film-name"
+      );
+
+    if (!title) {
+      const alt =
+        block.match(
+          /<img[^>]+alt=["']([^"']+)["']/i
+        );
+
+      title =
+        alt
+          ? decodeHTML(
+              alt[1]
+            ).trim()
+          : "";
+    }
+
+    title =
+      stripHTML(title);
+
+    if (!title) {
+      continue;
+    }
+
+    let year =
+      Number(
+        getAttr(
+          block,
+          "data-film-year"
+        )
+      ) ||
+      null;
+
+    let matching =
+      year
+        ? movieMap.get(
+            normalizeKey(
+              title,
+              year
+            )
+          )
+        : null;
+
+    if (!matching) {
+      matching =
+        (
+          byTitle.get(
+            normalizeTitle(
+              title
+            )
+          ) ||
+          []
+        )[0] ||
+        null;
+    }
+
+    if (!matching) {
+      continue;
+    }
+
+    year =
+      matching.year;
+
+    results.push({
+      ...matching,
+
+      title:
+        matching.title,
+
+      year,
+
+      position:
+        results.length +
+        1
+    });
+  }
+
+  return results;
+}
+
+async function getLiveTop100(
+  snapshot,
+  movieMap
+) {
+  const fallback =
+    buildSnapshotTop100(
+      snapshot,
+      movieMap
+    );
+
+  const listURL =
+    snapshot
+      .top100
+      ?.url;
+
+  if (!listURL) {
+    return fallback;
+  }
+
+  try {
+    const response =
+      await fetch(
+        listURL,
+        {
+          redirect:
+            "follow",
+
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 HenryMovieFrame/1.10",
+
+            Accept:
+              "text/html,application/xhtml+xml"
+          },
+
+          cache:
+            "no-store"
+        }
+      );
+
+    if (!response.ok) {
+      return fallback;
+    }
+
+    const live =
+      parsePublicListHTML(
+        await response.text(),
+        movieMap
+      );
+
+    return live.length >= 20
+      ? live.slice(
+          0,
+          100
+        )
+      : fallback;
+
+  } catch (error) {
+    console.error(
+      "Top 100 refresh failed:",
+      error
+    );
+
+    return fallback;
+  }
+}
+
+function buildYearLists(
+  snapshot,
+  movieMap,
+  movies
+) {
+  const result =
+    {};
+
+  const snapshotLists =
+    snapshot.yearLists ||
+    {};
+
+  const allYears =
+    new Set(
+      Object.keys(
+        snapshotLists
+      )
+    );
+
+  for (
+    const movie
+    of movies
+  ) {
+    if (movie.year) {
+      allYears.add(
+        String(
+          movie.year
+        )
+      );
+    }
+  }
+
+  for (
+    const year
+    of allYears
+  ) {
+    const list =
+      snapshotLists[year];
+
+    const items =
+      [];
+
+    const seen =
+      new Set();
+
+    if (
+      list?.items
+    ) {
+      for (
+        const item
+        of list.items
+      ) {
+        const key =
+          normalizeKey(
+            item.name,
+            item.year
+          );
+
+        const matching =
+          movieMap.get(key);
+
+        items.push({
+          title:
+            stripHTML(
+              item.name
+            ),
+
+          year:
+            item.year,
+
+          position:
+            item.position ||
+            items.length +
+            1,
+
+          link:
+            item.url,
+
+          poster:
+            matching?.poster ||
+            item.poster ||
+            "",
+
+          rating:
+            matching?.rating ??
+            null,
+
+          review:
+            matching?.review ||
+            null,
+
+          watchedDate:
+            matching?.watchedDate ||
+            null
+        });
+
+        seen.add(key);
+      }
+    }
+
+    const additions =
+      movies
+        .filter(
+          movie =>
+            String(
+              movie.year
+            ) ===
+              String(year) &&
+            !seen.has(
+              normalizeKey(
+                movie.title,
+                movie.year
+              )
+            )
+        )
+        .sort(
+          (a, b) =>
+            String(
+              b.watchedDate ||
+              ""
+            ).localeCompare(
+              String(
+                a.watchedDate ||
+                ""
+              )
+            )
+        );
+
+    for (
+      const movie
+      of additions
+    ) {
+      items.push({
+        ...movie,
+
+        position:
+          items.length +
+          1
       });
+    }
+
+    if (
+      items.length
+    ) {
+      result[year] =
+        items;
+    }
   }
 
   return result;
 }
 
-function buildTop100(
+async function getLiveFavorites(
   snapshot,
   movieMap
 ) {
-  if (!snapshot.top100) {
-    return [];
-  }
+  const fallbackURLs =
+    new Set(
+      snapshot
+        .profile
+        ?.favoriteFilmUrls ||
+      []
+    );
 
-  return snapshot.top100.items.map(
-    item => {
-      const matching =
-        movieMap.get(
-          normalizeKey(
-            item.name,
-            item.year
+  const fallback =
+    [
+      ...movieMap.values()
+    ]
+      .filter(
+        movie =>
+          fallbackURLs.has(
+            movie.link
           )
-        );
+      );
 
-      return {
-        title: item.name,
-        year: item.year,
-        position:
-          item.position,
-        link: item.url,
-        poster:
-          matching?.poster ||
-          "",
-        rating:
-          matching?.rating ??
-          null
-      };
+  try {
+    const response =
+      await fetch(
+        PROFILE_URL,
+        {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 HenryMovieFrame/1.10"
+          },
+
+          cache:
+            "no-store"
+        }
+      );
+
+    if (!response.ok) {
+      return fallback;
     }
-  );
+
+    const html =
+      await response.text();
+
+    const section =
+      html.match(
+        /<section[^>]+id=["']favourites["'][\s\S]*?<\/section>/i
+      )?.[0] ||
+      html.match(
+        /<div[^>]+class=["'][^"']*profile-favorites[^"']*["'][\s\S]*?<\/div>/i
+      )?.[0] ||
+      "";
+
+    if (!section) {
+      return fallback;
+    }
+
+    const parsed =
+      parsePublicListHTML(
+        section,
+        movieMap
+      );
+
+    return parsed.length
+      ? parsed.slice(
+          0,
+          4
+        )
+      : fallback;
+
+  } catch {
+    return fallback;
+  }
 }
 
 export default async function handler(
@@ -525,135 +1353,162 @@ export default async function handler(
 
     const movieMap =
       new Map(
-        movies.map(movie => [
-          normalizeKey(
-            movie.title,
-            movie.year
-          ),
-          movie
-        ])
+        movies.map(
+          movie => [
+            normalizeKey(
+              movie.title,
+              movie.year
+            ),
+            movie
+          ]
+        )
       );
 
     const combinedDiary =
       mergeDiary(
         snapshot.diary,
-        rssMovies
+        rssMovies,
+        movieMap
       );
 
-    const latest =
-      [...rssMovies]
-        .filter(
-          movie =>
-            movie.watchedDate
-        )
-        .sort(
-          (a, b) =>
-            String(
-              b.watchedDate
-            ).localeCompare(
-              String(
-                a.watchedDate
-              )
-            )
-        )[0] ||
-      [...movies]
-        .filter(
-          movie =>
-            movie.watchedDate
-        )
-        .sort(
-          (a, b) =>
-            String(
-              b.watchedDate
-            ).localeCompare(
-              String(
-                a.watchedDate
-              )
-            )
-        )[0] ||
-      null;
-
     const topRated =
-      [...movies]
+      [
+        ...movies
+      ]
+        .filter(
+          movie =>
+            Number.isFinite(
+              Number(
+                movie.rating
+              )
+            )
+        )
+        .sort(
+          (a, b) =>
+            Number(
+              b.rating
+            ) -
+            Number(
+              a.rating
+            ) ||
+            String(
+              b.watchedDate ||
+              ""
+            ).localeCompare(
+              String(
+                a.watchedDate ||
+                ""
+              )
+            )
+        )
+        .slice(
+          0,
+          40
+        );
+
+    const worstRated =
+      [
+        ...movies
+      ]
         .filter(
           movie =>
             Number(
               movie.rating
-            ) >= 4.5
+            ) > 0
         )
-        .sort((a, b) => {
-          const ratingDifference =
+        .sort(
+          (a, b) =>
             Number(
-              b.rating || 0
+              a.rating
             ) -
             Number(
-              a.rating || 0
-            );
-
-          if (
-            ratingDifference !== 0
-          ) {
-            return ratingDifference;
-          }
-
-          return String(
-            b.watchedDate || ""
-          ).localeCompare(
+              b.rating
+            ) ||
             String(
-              a.watchedDate || ""
+              b.watchedDate ||
+              ""
+            ).localeCompare(
+              String(
+                a.watchedDate ||
+                ""
+              )
             )
-          );
-        })
-        .slice(0, 30);
+        )
+        .slice(
+          0,
+          30
+        );
 
-    const favoriteURLs =
-      new Set(
-        snapshot.profile
-          .favoriteFilmUrls || []
+    const today =
+      getTodayInNewYork();
+
+    const targetDate =
+      previousYearDate(
+        today
       );
 
-    const favorites =
-      movies.filter(movie =>
-        favoriteURLs.has(
-          movie.link
-        ) ||
-        movie.liked
-      );
+    const yearAgoToday =
+      combinedDiary
+        .filter(
+          entry =>
+            entry.watchedDate ===
+            targetDate
+        );
+
+    const [
+      top100,
+      favorites
+    ] =
+      await Promise.all([
+        getLiveTop100(
+          snapshot,
+          movieMap
+        ),
+
+        getLiveFavorites(
+          snapshot,
+          movieMap
+        )
+      ]);
 
     const yearLists =
       buildYearLists(
         snapshot,
-        movieMap
-      );
-
-    const top100 =
-      buildTop100(
-        snapshot,
-        movieMap
+        movieMap,
+        movies
       );
 
     res.setHeader(
       "Cache-Control",
-      "no-store, max-age=0"
+      "s-maxage=300, stale-while-revalidate=900"
     );
 
-    res.status(200).json({
+    res.status(
+      200
+    ).json({
       username:
-        snapshot.profile.username ||
+        snapshot
+          .profile
+          ?.username ||
         USERNAME,
 
       displayName:
-        snapshot.profile.givenName ||
+        snapshot
+          .profile
+          ?.givenName ||
         "Henry",
 
       exportedAt:
         snapshot.exportedAt,
 
-      latest,
-
       movies,
 
+      diary:
+        combinedDiary,
+
       topRated,
+
+      worstRated,
 
       favorites,
 
@@ -661,19 +1516,25 @@ export default async function handler(
 
       yearLists,
 
+      yearAgoToday,
+
       facts:
         calculateFacts(
           snapshot,
-          combinedDiary
+          combinedDiary,
+          movies
         )
     });
+
   } catch (error) {
     console.error(
       "API error:",
       error
     );
 
-    res.status(500).json({
+    res.status(
+      500
+    ).json({
       error:
         "Unable to load Letterboxd frame data",
 
