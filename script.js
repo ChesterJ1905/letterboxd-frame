@@ -1,4 +1,4 @@
-const BUILD_NUMBER = "1.02";
+const BUILD_NUMBER = "1.03";
 
 const DEFAULT_SETTINGS = {
   modes: {
