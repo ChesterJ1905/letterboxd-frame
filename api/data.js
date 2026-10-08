@@ -185,7 +185,7 @@ function exportMovieToFrontend(movie) {
     review: movie.review,
     watchedDate:
       movie.lastWatchedDate,
-    poster: "",
+   poster: movie.poster || "",
     link: movie.filmUrl,
     liked: !!movie.liked,
     watchCount:
