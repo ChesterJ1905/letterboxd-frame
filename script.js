@@ -1,6 +1,7 @@
 const DEFAULT_SETTINGS = {
   modes: {
     random: true,
+    recentReviews: true,
     facts: true,
     topRated: true,
     recent: true,
@@ -10,14 +11,11 @@ const DEFAULT_SETTINGS = {
     worst: true
   },
 
-  backgroundColor:
-    "#0b1117",
+  backgroundColor1: "#0b1117",
+  backgroundColor2: "#182d3d",
 
-  brightness:
-    100,
-
-  slideDuration:
-    20000
+  brightness: 100,
+  slideDuration: 20000
 };
 
 
@@ -66,14 +64,24 @@ const settingsHotspot =
     "settingsHotspot"
   );
 
-const backgroundColorInput =
+const backgroundColor1Input =
   document.getElementById(
-    "backgroundColor"
+    "backgroundColor1"
   );
 
-const backgroundColorValue =
+const backgroundColor1Value =
   document.getElementById(
-    "backgroundColorValue"
+    "backgroundColor1Value"
+  );
+
+const backgroundColor2Input =
+  document.getElementById(
+    "backgroundColor2"
+  );
+
+const backgroundColor2Value =
+  document.getElementById(
+    "backgroundColor2Value"
   );
 
 const brightnessSlider =
@@ -105,8 +113,7 @@ async function loadData() {
       await fetch(
         "/api/data",
         {
-          cache:
-            "no-store"
+          cache: "no-store"
         }
       );
 
@@ -138,9 +145,7 @@ async function loadData() {
 
   } catch (error) {
 
-    console.error(
-      error
-    );
+    console.error(error);
 
 
     renderEmpty(
@@ -172,9 +177,23 @@ function loadSettings() {
 
 
     const parsed =
-      JSON.parse(
-        saved
-      );
+      JSON.parse(saved);
+
+
+    /*
+      Convert the old single-color
+      setting automatically.
+    */
+
+    if (
+      parsed.backgroundColor &&
+      !parsed.backgroundColor1
+    ) {
+
+      parsed.backgroundColor1 =
+        parsed.backgroundColor;
+
+    }
 
 
     return {
@@ -209,9 +228,7 @@ function cloneSettings(
 ) {
 
   return JSON.parse(
-    JSON.stringify(
-      value
-    )
+    JSON.stringify(value)
   );
 
 }
@@ -221,9 +238,7 @@ function saveSettings() {
 
   localStorage.setItem(
     "movieFrameSettings",
-    JSON.stringify(
-      settings
-    )
+    JSON.stringify(settings)
   );
 
 }
@@ -263,11 +278,8 @@ function isRealMovie(
 
   if (
     !movie ||
-    typeof movie !==
-      "object" ||
-    Array.isArray(
-      movie.items
-    )
+    typeof movie !== "object" ||
+    Array.isArray(movie.items)
   ) {
 
     return false;
@@ -284,20 +296,14 @@ function isRealMovie(
 
 
   const year =
-    Number(
-      movie.year
-    );
+    Number(movie.year);
 
 
   return (
 
-    Boolean(
-      title
-    ) &&
+    Boolean(title) &&
 
-    Number.isInteger(
-      year
-    ) &&
+    Number.isInteger(year) &&
 
     year >= 1880 &&
 
@@ -334,6 +340,32 @@ function hasReview(
 }
 
 
+function getRecentReviews() {
+
+  return getRealMovies()
+    .filter(
+      hasReview
+    )
+    .sort(
+      (a, b) =>
+        String(
+          b.watchedDate ||
+          ""
+        ).localeCompare(
+          String(
+            a.watchedDate ||
+            ""
+          )
+        )
+    )
+    .slice(
+      0,
+      5
+    );
+
+}
+
+
 function enabledModes() {
 
   return Object.entries(
@@ -359,8 +391,7 @@ function isTop100OnlyMode() {
 
   return (
     enabled.length === 1 &&
-    enabled[0] ===
-      "top100"
+    enabled[0] === "top100"
   );
 
 }
@@ -411,9 +442,31 @@ function buildSlideQueue() {
   ) {
 
     slideQueue.push({
-      type:
-        "random"
+      type: "random"
     });
+
+  }
+
+
+  if (
+    settings.modes.recentReviews
+  ) {
+
+    const recentReviews =
+      getRecentReviews();
+
+
+    for (
+      const movie of
+      recentReviews
+    ) {
+
+      slideQueue.push({
+        type: "recentReview",
+        movie
+      });
+
+    }
 
   }
 
@@ -423,14 +476,12 @@ function buildSlideQueue() {
   ) {
 
     slideQueue.push({
-      type:
-        "factsOverview"
+      type: "factsOverview"
     });
 
 
     slideQueue.push({
-      type:
-        "factsActivity"
+      type: "factsActivity"
     });
 
 
@@ -442,8 +493,7 @@ function buildSlideQueue() {
     ) {
 
       slideQueue.push({
-        type:
-          "yearAgoToday"
+        type: "yearAgoToday"
       });
 
     }
@@ -462,8 +512,7 @@ function buildSlideQueue() {
   ) {
 
     slideQueue.push({
-      type:
-        "topRated"
+      type: "topRated"
     });
 
   }
@@ -475,8 +524,7 @@ function buildSlideQueue() {
   ) {
 
     slideQueue.push({
-      type:
-        "recent"
+      type: "recent"
     });
 
   }
@@ -493,8 +541,7 @@ function buildSlideQueue() {
   ) {
 
     slideQueue.push({
-      type:
-        "favorite"
+      type: "favorite"
     });
 
   }
@@ -507,8 +554,7 @@ function buildSlideQueue() {
   ) {
 
     slideQueue.push({
-      type:
-        "top100"
+      type: "top100"
     });
 
   }
@@ -525,8 +571,7 @@ function buildSlideQueue() {
   ) {
 
     slideQueue.push({
-      type:
-        "worst"
+      type: "worst"
     });
 
   }
@@ -560,9 +605,7 @@ function buildSlideQueue() {
         year => {
 
           slideQueue.push({
-            type:
-              "yearRecap",
-
+            type: "yearRecap",
             year
           });
 
@@ -572,13 +615,10 @@ function buildSlideQueue() {
   }
 
 
-  if (
-    !slideQueue.length
-  ) {
+  if (!slideQueue.length) {
 
     slideQueue.push({
-      type:
-        "empty"
+      type: "empty"
     });
 
   }
@@ -595,9 +635,7 @@ function showSlide(
   );
 
 
-  if (
-    !slideQueue.length
-  ) {
+  if (!slideQueue.length) {
 
     return;
 
@@ -622,8 +660,7 @@ function showSlide(
 
 
   if (
-    slide.type ===
-    "random"
+    slide.type === "random"
   ) {
 
     renderMovie(
@@ -634,8 +671,18 @@ function showSlide(
   }
 
   else if (
-    slide.type ===
-    "factsOverview"
+    slide.type === "recentReview"
+  ) {
+
+    renderMovie(
+      slide.movie,
+      "RECENT REVIEW"
+    );
+
+  }
+
+  else if (
+    slide.type === "factsOverview"
   ) {
 
     renderFactsOverview();
@@ -643,8 +690,7 @@ function showSlide(
   }
 
   else if (
-    slide.type ===
-    "factsActivity"
+    slide.type === "factsActivity"
   ) {
 
     renderFactsActivity();
@@ -652,8 +698,7 @@ function showSlide(
   }
 
   else if (
-    slide.type ===
-    "yearAgoToday"
+    slide.type === "yearAgoToday"
   ) {
 
     renderYearAgoToday();
@@ -661,8 +706,7 @@ function showSlide(
   }
 
   else if (
-    slide.type ===
-    "topRated"
+    slide.type === "topRated"
   ) {
 
     renderMovie(
@@ -675,8 +719,7 @@ function showSlide(
   }
 
   else if (
-    slide.type ===
-    "recent"
+    slide.type === "recent"
   ) {
 
     renderRecent();
@@ -684,8 +727,7 @@ function showSlide(
   }
 
   else if (
-    slide.type ===
-    "favorite"
+    slide.type === "favorite"
   ) {
 
     renderMovie(
@@ -698,8 +740,7 @@ function showSlide(
   }
 
   else if (
-    slide.type ===
-    "top100"
+    slide.type === "top100"
   ) {
 
     renderTop100();
@@ -707,8 +748,7 @@ function showSlide(
   }
 
   else if (
-    slide.type ===
-    "worst"
+    slide.type === "worst"
   ) {
 
     renderMovie(
@@ -721,8 +761,7 @@ function showSlide(
   }
 
   else if (
-    slide.type ===
-    "yearRecap"
+    slide.type === "yearRecap"
   ) {
 
     renderYearRecap(
@@ -847,15 +886,12 @@ function pickRandom(
     (
       list ||
       []
-    )
-      .filter(
-        isRealMovie
-      );
+    ).filter(
+      isRealMovie
+    );
 
 
-  if (
-    !clean.length
-  ) {
+  if (!clean.length) {
 
     return null;
 
@@ -881,9 +917,7 @@ function pickRandomReviewedMovie() {
       );
 
 
-  if (
-    !movies.length
-  ) {
+  if (!movies.length) {
 
     return null;
 
@@ -907,9 +941,7 @@ function renderMovie(
 ) {
 
   if (
-    !isRealMovie(
-      movie
-    )
+    !isRealMovie(movie)
   ) {
 
     renderEmpty(
@@ -982,11 +1014,9 @@ function renderMovie(
             `
             : `
               <div class="poster poster-empty">
-
                 ${escapeHTML(
                   title
                 )}
-
               </div>
             `
         }
@@ -997,11 +1027,9 @@ function renderMovie(
       <div class="movie-info">
 
         <p class="eyebrow">
-
           ${escapeHTML(
             label
           )}
-
         </p>
 
 
@@ -1009,30 +1037,24 @@ function renderMovie(
 
 
         <h1 class="movie-title">
-
           ${escapeHTML(
             title
           )}
-
         </h1>
 
 
         <div class="movie-year">
-
           ${escapeHTML(
             movie.year ||
             ""
           )}
-
         </div>
 
 
         <div class="movie-rating">
-
           ${makeStars(
             movie.rating
           )}
-
         </div>
 
 
@@ -1053,11 +1075,9 @@ function renderMovie(
           review
             ? `
               <div class="movie-review">
-
                 “${escapeHTML(
                   review
                 )}”
-
               </div>
             `
             : ""
@@ -1073,9 +1093,7 @@ function renderMovie(
 
 function renderFactsOverview() {
 
-  setBackgroundImage(
-    ""
-  );
+  setBackgroundImage("");
 
 
   const facts =
@@ -1118,9 +1136,7 @@ function renderFactsOverview() {
 
 function renderFactsActivity() {
 
-  setBackgroundImage(
-    ""
-  );
+  setBackgroundImage("");
 
 
   const facts =
@@ -1170,11 +1186,9 @@ function factPage(
     <section class="facts-slide">
 
       <div class="facts-heading">
-
         ${escapeHTML(
           title
         )}
-
       </div>
 
 
@@ -1192,19 +1206,15 @@ function factPage(
                 <div class="fact-card">
 
                   <span class="fact-number">
-
                     ${escapeHTML(
                       number
                     )}
-
                   </span>
 
                   <span class="fact-label">
-
                     ${escapeHTML(
                       label
                     )}
-
                   </span>
 
                 </div>
@@ -1227,10 +1237,9 @@ function renderYearAgoToday() {
     (
       data?.yearAgoToday ||
       []
-    )
-      .filter(
-        isRealMovie
-      );
+    ).filter(
+      isRealMovie
+    );
 
 
   const movie =
@@ -1258,9 +1267,7 @@ function renderYearAgoToday() {
 
 function renderRecent() {
 
-  setBackgroundImage(
-    ""
-  );
+  setBackgroundImage("");
 
 
   const movies =
@@ -1274,13 +1281,12 @@ function renderRecent() {
           String(
             b.watchedDate ||
             ""
-          )
-            .localeCompare(
-              String(
-                a.watchedDate ||
-                ""
-              )
+          ).localeCompare(
+            String(
+              a.watchedDate ||
+              ""
             )
+          )
       )
       .slice(
         0,
@@ -1288,9 +1294,7 @@ function renderRecent() {
       );
 
 
-  if (
-    !movies.length
-  ) {
+  if (!movies.length) {
 
     renderEmpty(
       "No recent movies found."
@@ -1305,9 +1309,7 @@ function renderRecent() {
     <section class="recent-slide">
 
       <h2 class="recent-title">
-
         RECENTLY WATCHED
-
       </h2>
 
 
@@ -1349,9 +1351,7 @@ function renderYearRecap(
   year
 ) {
 
-  setBackgroundImage(
-    ""
-  );
+  setBackgroundImage("");
 
 
   const movies =
@@ -1367,9 +1367,7 @@ function renderYearRecap(
       );
 
 
-  if (
-    !movies.length
-  ) {
+  if (!movies.length) {
 
     renderEmpty(
       `No movies found for ${year}.`
@@ -1387,25 +1385,19 @@ function renderYearRecap(
       <div class="year-heading">
 
         <div class="year-label">
-
           YEAR RECAP
-
         </div>
 
 
         <h1 class="year-number">
-
           ${escapeHTML(
             year
           )}
-
         </h1>
 
 
         <div class="year-subtitle">
-
           HENRY'S RANKING
-
         </div>
 
       </div>
@@ -1457,33 +1449,27 @@ function renderYearRecap(
                           `
                           : `
                             <div class="year-poster year-poster-empty">
-
                               ${escapeHTML(
                                 title
                               )}
-
                             </div>
                           `
                       }
 
 
                       <div class="year-rank">
-
                         #${escapeHTML(
                           rank
                         )}
-
                       </div>
 
                     </div>
 
 
                     <div class="year-movie-title">
-
                       ${escapeHTML(
                         title
                       )}
-
                     </div>
 
                   </div>
@@ -1506,20 +1492,16 @@ function renderEmpty(
   message
 ) {
 
-  setBackgroundImage(
-    ""
-  );
+  setBackgroundImage("");
 
 
   slideRoot.innerHTML = `
     <section class="empty-slide">
 
       <h1>
-
         ${escapeHTML(
           message
         )}
-
       </h1>
 
     </section>
@@ -1563,9 +1545,7 @@ function makeStars(
 
 
   const value =
-    Number(
-      rating
-    );
+    Number(rating);
 
 
   if (
@@ -1580,20 +1560,15 @@ function makeStars(
 
 
   const full =
-    Math.floor(
-      value
-    );
+    Math.floor(value);
 
 
   const half =
-    value % 1 >=
-    0.5;
+    value % 1 >= 0.5;
 
 
   return (
-    "★".repeat(
-      full
-    ) +
+    "★".repeat(full) +
     (
       half
         ? "½"
@@ -1608,9 +1583,7 @@ function formatDate(
   dateString
 ) {
 
-  if (
-    !dateString
-  ) {
+  if (!dateString) {
 
     return "";
 
@@ -1640,14 +1613,9 @@ function formatDate(
     .toLocaleDateString(
       "en-US",
       {
-        month:
-          "long",
-
-        day:
-          "numeric",
-
-        year:
-          "numeric"
+        month: "long",
+        day: "numeric",
+        year: "numeric"
       }
     );
 
@@ -1656,18 +1624,14 @@ function formatDate(
 
 function updateLastUpdated() {
 
-  if (
-    !lastUpdatedElement
-  ) {
+  if (!lastUpdatedElement) {
 
     return;
 
   }
 
 
-  if (
-    !lastUpdatedAt
-  ) {
+  if (!lastUpdatedAt) {
 
     lastUpdatedElement
       .textContent =
@@ -1683,20 +1647,11 @@ function updateLastUpdated() {
       `Last updated: ${lastUpdatedAt.toLocaleString(
         "en-US",
         {
-          month:
-            "short",
-
-          day:
-            "numeric",
-
-          year:
-            "numeric",
-
-          hour:
-            "numeric",
-
-          minute:
-            "2-digit"
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit"
         }
       )}`;
 
@@ -1707,9 +1662,7 @@ function escapeHTML(
   value = ""
 ) {
 
-  return String(
-    value
-  )
+  return String(value)
     .replace(
       /&/g,
       "&amp;"
@@ -1770,9 +1723,7 @@ function togglePause() {
   );
 
 
-  if (
-    paused
-  ) {
+  if (paused) {
 
     showPlayStateIcon(
       "⏸",
@@ -1799,9 +1750,7 @@ function showPlayStateIcon(
   autoHide
 ) {
 
-  if (
-    !playStateIcon
-  ) {
+  if (!playStateIcon) {
 
     return;
 
@@ -1825,9 +1774,7 @@ function showPlayStateIcon(
     );
 
 
-  if (
-    autoHide
-  ) {
+  if (autoHide) {
 
     iconTimer =
       setTimeout(
@@ -1855,9 +1802,7 @@ function openSettings() {
   );
 
 
-  if (
-    !settingsPanel
-  ) {
+  if (!settingsPanel) {
 
     return;
 
@@ -1871,28 +1816,17 @@ function openSettings() {
     );
 
 
-  settingsPanel
-    .style
-    .display =
-      "flex";
+  settingsPanel.style.display =
+    "flex";
 
+  settingsPanel.style.visibility =
+    "visible";
 
-  settingsPanel
-    .style
-    .visibility =
-      "visible";
+  settingsPanel.style.opacity =
+    "1";
 
-
-  settingsPanel
-    .style
-    .opacity =
-      "1";
-
-
-  settingsPanel
-    .style
-    .zIndex =
-      "2147483647";
+  settingsPanel.style.zIndex =
+    "2147483647";
 
 
   populateSettingsUI();
@@ -1902,9 +1836,7 @@ function openSettings() {
 
 function closeSettings() {
 
-  if (
-    !settingsPanel
-  ) {
+  if (!settingsPanel) {
 
     return;
 
@@ -1918,15 +1850,11 @@ function closeSettings() {
     );
 
 
-  settingsPanel
-    .style
-    .display =
-      "none";
+  settingsPanel.style.display =
+    "none";
 
 
-  if (
-    !paused
-  ) {
+  if (!paused) {
 
     scheduleNextSlide();
 
@@ -1957,26 +1885,45 @@ function populateSettingsUI() {
 
 
   if (
-    backgroundColorInput
+    backgroundColor1Input
   ) {
 
-    backgroundColorInput
-      .value =
-        settings
-          .backgroundColor;
+    backgroundColor1Input.value =
+      settings.backgroundColor1;
 
   }
 
 
   if (
-    backgroundColorValue
+    backgroundColor1Value
   ) {
 
-    backgroundColorValue
-      .textContent =
-        settings
-          .backgroundColor
-          .toUpperCase();
+    backgroundColor1Value.textContent =
+      settings
+        .backgroundColor1
+        .toUpperCase();
+
+  }
+
+
+  if (
+    backgroundColor2Input
+  ) {
+
+    backgroundColor2Input.value =
+      settings.backgroundColor2;
+
+  }
+
+
+  if (
+    backgroundColor2Value
+  ) {
+
+    backgroundColor2Value.textContent =
+      settings
+        .backgroundColor2
+        .toUpperCase();
 
   }
 
@@ -1985,10 +1932,8 @@ function populateSettingsUI() {
     brightnessSlider
   ) {
 
-    brightnessSlider
-      .value =
-        settings
-          .brightness;
+    brightnessSlider.value =
+      settings.brightness;
 
   }
 
@@ -1997,9 +1942,8 @@ function populateSettingsUI() {
     brightnessValue
   ) {
 
-    brightnessValue
-      .textContent =
-        `${settings.brightness}%`;
+    brightnessValue.textContent =
+      `${settings.brightness}%`;
 
   }
 
@@ -2008,12 +1952,10 @@ function populateSettingsUI() {
     slideDuration
   ) {
 
-    slideDuration
-      .value =
-        String(
-          settings
-            .slideDuration
-        );
+    slideDuration.value =
+      String(
+        settings.slideDuration
+      );
 
   }
 
@@ -2037,12 +1979,9 @@ function readSettingsFromUI() {
       checkbox => {
 
         modes[
-          checkbox
-            .dataset
-            .mode
+          checkbox.dataset.mode
         ] =
-          checkbox
-            .checked;
+          checkbox.checked;
 
       }
     );
@@ -2052,33 +1991,29 @@ function readSettingsFromUI() {
 
     modes,
 
+    backgroundColor1:
+      backgroundColor1Input
+        ? backgroundColor1Input.value
+        : settings.backgroundColor1,
 
-    backgroundColor:
-      backgroundColorInput
-        ? backgroundColorInput
-            .value
-        : settings
-            .backgroundColor,
-
+    backgroundColor2:
+      backgroundColor2Input
+        ? backgroundColor2Input.value
+        : settings.backgroundColor2,
 
     brightness:
       brightnessSlider
         ? Number(
-            brightnessSlider
-              .value
+            brightnessSlider.value
           )
-        : settings
-            .brightness,
-
+        : settings.brightness,
 
     slideDuration:
       slideDuration
         ? Number(
-            slideDuration
-              .value
+            slideDuration.value
           )
-        : settings
-            .slideDuration
+        : settings.slideDuration
 
   };
 
@@ -2096,21 +2031,17 @@ function readSettingsFromUI() {
   buildSlideQueue();
 
 
-  showSlide(
-    0
-  );
+  showSlide(0);
 
 }
 
 
-function getContrastTextColor(
+function hexLuminance(
   hex
 ) {
 
   const clean =
-    String(
-      hex
-    )
+    String(hex)
       .replace(
         "#",
         ""
@@ -2147,17 +2078,34 @@ function getContrastTextColor(
     );
 
 
-  const luminance =
+  return (
     0.299 * r +
     0.587 * g +
-    0.114 * b;
-
-
-  return (
-    luminance > 160
-      ? "#111111"
-      : "#ffffff"
+    0.114 * b
   );
+
+}
+
+
+function getGradientTextColor(
+  color1,
+  color2
+) {
+
+  const average =
+    (
+      hexLuminance(
+        color1
+      ) +
+      hexLuminance(
+        color2
+      )
+    ) / 2;
+
+
+  return average > 160
+    ? "#111111"
+    : "#ffffff";
 
 }
 
@@ -2165,129 +2113,145 @@ function getContrastTextColor(
 function applyVisualSettings() {
 
   const textColor =
-    getContrastTextColor(
-      settings
-        .backgroundColor
+    getGradientTextColor(
+      settings.backgroundColor1,
+      settings.backgroundColor2
     );
 
 
-  document
-    .documentElement
+  document.documentElement
     .style
     .setProperty(
-      "--frame-background",
-      settings
-        .backgroundColor
+      "--frame-background-1",
+      settings.backgroundColor1
     );
 
 
-  document
-    .documentElement
+  document.documentElement
     .style
     .setProperty(
-      "--frame-brightness",
-      settings
-        .brightness /
-        100
+      "--frame-background-2",
+      settings.backgroundColor2
     );
 
 
-  document
-    .documentElement
+  document.documentElement
     .style
     .setProperty(
       "--frame-text",
       textColor
     );
 
-}
 
-
-if (
-  backgroundColorInput
-) {
-
-  backgroundColorInput
-    .addEventListener(
-      "input",
-      () => {
-
-        if (
-          backgroundColorValue
-        ) {
-
-          backgroundColorValue
-            .textContent =
-              backgroundColorInput
-                .value
-                .toUpperCase();
-
-        }
-
-
-        document
-          .documentElement
-          .style
-          .setProperty(
-            "--frame-background",
-            backgroundColorInput
-              .value
-          );
-
-
-        document
-          .documentElement
-          .style
-          .setProperty(
-            "--frame-text",
-            getContrastTextColor(
-              backgroundColorInput
-                .value
-            )
-          );
-
-      }
+  document.documentElement
+    .style
+    .setProperty(
+      "--frame-brightness",
+      settings.brightness /
+      100
     );
 
 }
 
 
-if (
-  brightnessSlider
-) {
+function previewGradient() {
 
-  brightnessSlider
-    .addEventListener(
-      "input",
-      () => {
-
-        if (
-          brightnessValue
-        ) {
-
-          brightnessValue
-            .textContent =
-              `${brightnessSlider.value}%`;
-
-        }
+  const color1 =
+    backgroundColor1Input
+      ?.value ||
+    settings.backgroundColor1;
 
 
-        document
-          .documentElement
-          .style
-          .setProperty(
-            "--frame-brightness",
-            Number(
-              brightnessSlider
-                .value
-            ) /
-            100
-          );
+  const color2 =
+    backgroundColor2Input
+      ?.value ||
+    settings.backgroundColor2;
 
-      }
+
+  document.documentElement
+    .style
+    .setProperty(
+      "--frame-background-1",
+      color1
+    );
+
+
+  document.documentElement
+    .style
+    .setProperty(
+      "--frame-background-2",
+      color2
+    );
+
+
+  document.documentElement
+    .style
+    .setProperty(
+      "--frame-text",
+      getGradientTextColor(
+        color1,
+        color2
+      )
     );
 
 }
+
+
+backgroundColor1Input
+  ?.addEventListener(
+    "input",
+    () => {
+
+      backgroundColor1Value.textContent =
+        backgroundColor1Input
+          .value
+          .toUpperCase();
+
+
+      previewGradient();
+
+    }
+  );
+
+
+backgroundColor2Input
+  ?.addEventListener(
+    "input",
+    () => {
+
+      backgroundColor2Value.textContent =
+        backgroundColor2Input
+          .value
+          .toUpperCase();
+
+
+      previewGradient();
+
+    }
+  );
+
+
+brightnessSlider
+  ?.addEventListener(
+    "input",
+    () => {
+
+      brightnessValue.textContent =
+        `${brightnessSlider.value}%`;
+
+
+      document.documentElement
+        .style
+        .setProperty(
+          "--frame-brightness",
+          Number(
+            brightnessSlider.value
+          ) /
+          100
+        );
+
+    }
+  );
 
 
 document
@@ -2346,9 +2310,7 @@ document
       buildSlideQueue();
 
 
-      showSlide(
-        0
-      );
+      showSlide(0);
 
     }
   );
@@ -2374,7 +2336,6 @@ function handleSettingsTouch(
 
   event.preventDefault();
 
-
   event.stopPropagation();
 
 
@@ -2383,17 +2344,14 @@ function handleSettingsTouch(
 }
 
 
-if (
-  settingsHotspot
-) {
+if (settingsHotspot) {
 
   settingsHotspot
     .addEventListener(
       "touchstart",
       handleSettingsTouch,
       {
-        passive:
-          false
+        passive: false
       }
     );
 
@@ -2453,19 +2411,16 @@ document
   );
 
 
-document
-  .addEventListener(
-    "contextmenu",
-    event =>
-      event.preventDefault()
-  );
+document.addEventListener(
+  "contextmenu",
+  event =>
+    event.preventDefault()
+);
 
 
 applyVisualSettings();
 
-
 populateSettingsUI();
-
 
 loadData();
 
