@@ -106,9 +106,7 @@ const lastUpdatedElement =
 
 
 async function loadData() {
-
   try {
-
     const response =
       await fetch(
         "/api/data",
@@ -117,142 +115,96 @@ async function loadData() {
         }
       );
 
-
     if (!response.ok) {
-
       throw new Error(
         `Server returned ${response.status}`
       );
-
     }
-
 
     data =
       await response.json();
 
-
     lastUpdatedAt =
       new Date();
 
-
     updateLastUpdated();
 
-
     buildSlideQueue();
-
 
     showSlide(0);
 
   } catch (error) {
-
     console.error(error);
-
 
     renderEmpty(
       "Unable to load Letterboxd data."
     );
-
   }
-
 }
 
 
 function loadSettings() {
-
   try {
-
     const saved =
       localStorage.getItem(
         "movieFrameSettings"
       );
 
-
     if (!saved) {
-
       return cloneSettings(
         DEFAULT_SETTINGS
       );
-
     }
-
 
     const parsed =
       JSON.parse(saved);
-
-
-    /*
-      Convert the old single-color
-      setting automatically.
-    */
 
     if (
       parsed.backgroundColor &&
       !parsed.backgroundColor1
     ) {
-
       parsed.backgroundColor1 =
         parsed.backgroundColor;
-
     }
 
-
     return {
-
       ...DEFAULT_SETTINGS,
-
       ...parsed,
 
       modes: {
-
         ...DEFAULT_SETTINGS.modes,
-
         ...(parsed.modes || {})
-
       }
-
     };
 
   } catch {
-
     return cloneSettings(
       DEFAULT_SETTINGS
     );
-
   }
-
 }
 
 
-function cloneSettings(
-  value
-) {
-
+function cloneSettings(value) {
   return JSON.parse(
     JSON.stringify(value)
   );
-
 }
 
 
 function saveSettings() {
-
   localStorage.setItem(
     "movieFrameSettings",
     JSON.stringify(settings)
   );
-
 }
 
 
-function stripTags(
-  value = ""
-) {
-
+function stripTags(value = "") {
   const textarea =
     document.createElement(
       "textarea"
     );
-
 
   textarea.innerHTML =
     String(value)
@@ -261,31 +213,23 @@ function stripTags(
         ""
       );
 
-
   return textarea.value
     .replace(
       /\s+/g,
       " "
     )
     .trim();
-
 }
 
 
-function isRealMovie(
-  movie
-) {
-
+function isRealMovie(movie) {
   if (
     !movie ||
     typeof movie !== "object" ||
     Array.isArray(movie.items)
   ) {
-
     return false;
-
   }
-
 
   const title =
     stripTags(
@@ -294,54 +238,39 @@ function isRealMovie(
       ""
     );
 
-
   const year =
     Number(movie.year);
 
-
   return (
-
     Boolean(title) &&
-
     Number.isInteger(year) &&
-
     year >= 1880 &&
-
     year <= 2100
-
   );
-
 }
 
 
 function getRealMovies() {
-
   return (
     data?.movies ||
     []
   ).filter(
     isRealMovie
   );
-
 }
 
 
-function hasReview(
-  movie
-) {
-
+function hasReview(movie) {
   return (
     stripTags(
       movie?.review ||
       ""
     ).length > 0
   );
-
 }
 
 
 function getRecentReviews() {
-
   return getRealMovies()
     .filter(
       hasReview
@@ -362,12 +291,23 @@ function getRecentReviews() {
       0,
       5
     );
+}
 
+
+function getAvailableYears() {
+  return Object.keys(
+    data?.yearLists || {}
+  ).filter(
+    year =>
+      Array.isArray(
+        data.yearLists[year]
+      ) &&
+      data.yearLists[year].length
+  );
 }
 
 
 function enabledModes() {
-
   return Object.entries(
     settings.modes
   )
@@ -379,26 +319,21 @@ function enabledModes() {
       ([name]) =>
         name
     );
-
 }
 
 
 function isTop100OnlyMode() {
-
   const enabled =
     enabledModes();
-
 
   return (
     enabled.length === 1 &&
     enabled[0] === "top100"
   );
-
 }
 
 
 function getSortedTop100() {
-
   return (
     data?.top100 ||
     []
@@ -417,21 +352,15 @@ function getSortedTop100() {
           999
         )
     );
-
 }
 
 
 function buildSlideQueue() {
-
   slideQueue = [];
 
-
   if (!data) {
-
     return;
-
   }
-
 
   if (
     settings.modes.random &&
@@ -440,50 +369,32 @@ function buildSlideQueue() {
         hasReview
       )
   ) {
-
     slideQueue.push({
       type: "random"
     });
-
   }
 
 
   if (
-    settings.modes.recentReviews
+    settings.modes.recentReviews &&
+    getRecentReviews().length
   ) {
-
-    const recentReviews =
-      getRecentReviews();
-
-
-    for (
-      const movie of
-      recentReviews
-    ) {
-
-      slideQueue.push({
-        type: "recentReview",
-        movie
-      });
-
-    }
-
+    slideQueue.push({
+      type: "recentReview"
+    });
   }
 
 
   if (
     settings.modes.facts
   ) {
-
     slideQueue.push({
       type: "factsOverview"
     });
 
-
     slideQueue.push({
       type: "factsActivity"
     });
-
 
     if (
       (
@@ -491,13 +402,10 @@ function buildSlideQueue() {
         []
       ).length
     ) {
-
       slideQueue.push({
         type: "yearAgoToday"
       });
-
     }
-
   }
 
 
@@ -510,11 +418,9 @@ function buildSlideQueue() {
       isRealMovie
     )
   ) {
-
     slideQueue.push({
       type: "topRated"
     });
-
   }
 
 
@@ -522,11 +428,9 @@ function buildSlideQueue() {
     settings.modes.recent &&
     getRealMovies().length
   ) {
-
     slideQueue.push({
       type: "recent"
     });
-
   }
 
 
@@ -539,11 +443,9 @@ function buildSlideQueue() {
       isRealMovie
     )
   ) {
-
     slideQueue.push({
       type: "favorite"
     });
-
   }
 
 
@@ -552,11 +454,9 @@ function buildSlideQueue() {
     getSortedTop100()
       .length
   ) {
-
     slideQueue.push({
       type: "top100"
     });
-
   }
 
 
@@ -569,78 +469,38 @@ function buildSlideQueue() {
       isRealMovie
     )
   ) {
-
     slideQueue.push({
       type: "worst"
     });
-
   }
 
 
   if (
     settings.modes.yearRecap &&
-    data.yearLists
+    getAvailableYears().length
   ) {
-
-    Object.keys(
-      data.yearLists
-    )
-      .filter(
-        year =>
-          Array.isArray(
-            data.yearLists[
-              year
-            ]
-          ) &&
-          data.yearLists[
-            year
-          ].length
-      )
-      .sort(
-        (a, b) =>
-          Number(b) -
-          Number(a)
-      )
-      .forEach(
-        year => {
-
-          slideQueue.push({
-            type: "yearRecap",
-            year
-          });
-
-        }
-      );
-
+    slideQueue.push({
+      type: "yearRecap"
+    });
   }
 
 
   if (!slideQueue.length) {
-
     slideQueue.push({
       type: "empty"
     });
-
   }
-
 }
 
 
-function showSlide(
-  index
-) {
-
+function showSlide(index) {
   clearTimeout(
     slideTimer
   );
 
-
   if (!slideQueue.length) {
-
     return;
-
   }
-
 
   slideIndex =
     (
@@ -652,7 +512,6 @@ function showSlide(
     ) %
     slideQueue.length;
 
-
   const slide =
     slideQueue[
       slideIndex
@@ -662,177 +521,151 @@ function showSlide(
   if (
     slide.type === "random"
   ) {
-
     renderMovie(
       pickRandomReviewedMovie(),
       "RANDOM REVIEW"
     );
-
   }
 
   else if (
     slide.type === "recentReview"
   ) {
-
     renderMovie(
-      slide.movie,
+      pickRandom(
+        getRecentReviews()
+      ),
       "RECENT REVIEW"
     );
-
   }
 
   else if (
     slide.type === "factsOverview"
   ) {
-
     renderFactsOverview();
-
   }
 
   else if (
     slide.type === "factsActivity"
   ) {
-
     renderFactsActivity();
-
   }
 
   else if (
     slide.type === "yearAgoToday"
   ) {
-
     renderYearAgoToday();
-
   }
 
   else if (
     slide.type === "topRated"
   ) {
-
     renderMovie(
       pickRandom(
         data.topRated
       ),
       "TOP RATED"
     );
-
   }
 
   else if (
     slide.type === "recent"
   ) {
-
     renderRecent();
-
   }
 
   else if (
     slide.type === "favorite"
   ) {
-
     renderMovie(
       pickRandom(
         data.favorites
       ),
       "FAVORITE"
     );
-
   }
 
   else if (
     slide.type === "top100"
   ) {
-
     renderTop100();
-
   }
 
   else if (
     slide.type === "worst"
   ) {
-
     renderMovie(
       pickRandom(
         data.worstRated
       ),
       "WORST MOVIES"
     );
-
   }
 
   else if (
     slide.type === "yearRecap"
   ) {
+    const years =
+      getAvailableYears();
+
+    const randomYear =
+      years[
+        Math.floor(
+          Math.random() *
+          years.length
+        )
+      ];
 
     renderYearRecap(
-      slide.year
+      randomYear
     );
-
   }
 
   else {
-
     renderEmpty(
       "No modes enabled."
     );
-
   }
 
 
   if (!paused) {
-
     scheduleNextSlide();
-
   }
-
 }
 
 
 function renderTop100() {
-
   const movies =
     getSortedTop100();
 
-
   if (!movies.length) {
-
     renderEmpty(
       "No Top 100 movies found."
     );
 
     return;
-
   }
 
-
   let movie;
-
 
   if (
     isTop100OnlyMode()
   ) {
-
     if (
       top100SequenceIndex >=
       movies.length
     ) {
-
       top100SequenceIndex =
         0;
-
     }
-
 
     movie =
       movies[
         top100SequenceIndex
       ];
 
-
     top100SequenceIndex++;
 
   } else {
-
     movie =
       movies[
         Math.floor(
@@ -840,9 +673,7 @@ function renderTop100() {
           movies.length
         )
       ];
-
   }
-
 
   renderMovie(
     movie,
@@ -852,36 +683,27 @@ function renderTop100() {
         movie.position
     }
   );
-
 }
 
 
 function scheduleNextSlide() {
-
   clearTimeout(
     slideTimer
   );
 
-
   slideTimer =
     setTimeout(
       () => {
-
         showSlide(
           slideIndex + 1
         );
-
       },
       settings.slideDuration
     );
-
 }
 
 
-function pickRandom(
-  list
-) {
-
+function pickRandom(list) {
   const clean =
     (
       list ||
@@ -890,13 +712,9 @@ function pickRandom(
       isRealMovie
     );
 
-
   if (!clean.length) {
-
     return null;
-
   }
-
 
   return clean[
     Math.floor(
@@ -904,25 +722,19 @@ function pickRandom(
       clean.length
     )
   ];
-
 }
 
 
 function pickRandomReviewedMovie() {
-
   const movies =
     getRealMovies()
       .filter(
         hasReview
       );
 
-
   if (!movies.length) {
-
     return null;
-
   }
-
 
   return movies[
     Math.floor(
@@ -930,7 +742,6 @@ function pickRandomReviewedMovie() {
       movies.length
     )
   ];
-
 }
 
 
@@ -939,19 +750,15 @@ function renderMovie(
   label,
   options = {}
 ) {
-
   if (
     !isRealMovie(movie)
   ) {
-
     renderEmpty(
       "No movie available."
     );
 
     return;
-
   }
-
 
   const title =
     stripTags(
@@ -960,19 +767,16 @@ function renderMovie(
       ""
     );
 
-
   const review =
     stripTags(
       movie.review ||
       ""
     );
 
-
   setBackgroundImage(
     movie.poster ||
     ""
   );
-
 
   const top100RankHTML =
     options.top100Rank
@@ -992,7 +796,6 @@ function renderMovie(
         </div>
       `
       : "";
-
 
   slideRoot.innerHTML = `
     <section class="movie-slide">
@@ -1023,7 +826,6 @@ function renderMovie(
 
       </div>
 
-
       <div class="movie-info">
 
         <p class="eyebrow">
@@ -1032,16 +834,13 @@ function renderMovie(
           )}
         </p>
 
-
         ${top100RankHTML}
-
 
         <h1 class="movie-title">
           ${escapeHTML(
             title
           )}
         </h1>
-
 
         <div class="movie-year">
           ${escapeHTML(
@@ -1050,16 +849,13 @@ function renderMovie(
           )}
         </div>
 
-
         <div class="movie-rating">
           ${makeStars(
             movie.rating
           )}
         </div>
 
-
         <div class="movie-date">
-
           ${
             movie.watchedDate
               ? `Watched ${formatDate(
@@ -1067,9 +863,7 @@ function renderMovie(
                 )}`
               : ""
           }
-
         </div>
-
 
         ${
           review
@@ -1087,19 +881,15 @@ function renderMovie(
 
     </section>
   `;
-
 }
 
 
 function renderFactsOverview() {
-
   setBackgroundImage("");
-
 
   const facts =
     data?.facts ||
     {};
-
 
   slideRoot.innerHTML =
     factPage(
@@ -1130,19 +920,15 @@ function renderFactsOverview() {
         ]
       ]
     );
-
 }
 
 
 function renderFactsActivity() {
-
   setBackgroundImage("");
-
 
   const facts =
     data?.facts ||
     {};
-
 
   slideRoot.innerHTML =
     factPage(
@@ -1173,7 +959,6 @@ function renderFactsActivity() {
         ]
       ]
     );
-
 }
 
 
@@ -1181,7 +966,6 @@ function factPage(
   title,
   items
 ) {
-
   return `
     <section class="facts-slide">
 
@@ -1190,7 +974,6 @@ function factPage(
           title
         )}
       </div>
-
 
       <div class="facts-grid">
 
@@ -1227,12 +1010,10 @@ function factPage(
 
     </section>
   `;
-
 }
 
 
 function renderYearAgoToday() {
-
   const entries =
     (
       data?.yearAgoToday ||
@@ -1241,34 +1022,26 @@ function renderYearAgoToday() {
       isRealMovie
     );
 
-
   const movie =
     pickRandom(
       entries
     );
 
-
   if (!movie) {
-
     renderFactsActivity();
 
     return;
-
   }
-
 
   renderMovie(
     movie,
     "ONE YEAR AGO TODAY"
   );
-
 }
 
 
 function renderRecent() {
-
   setBackgroundImage("");
-
 
   const movies =
     getRealMovies()
@@ -1293,17 +1066,13 @@ function renderRecent() {
         12
       );
 
-
   if (!movies.length) {
-
     renderEmpty(
       "No recent movies found."
     );
 
     return;
-
   }
-
 
   slideRoot.innerHTML = `
     <section class="recent-slide">
@@ -1311,7 +1080,6 @@ function renderRecent() {
       <h2 class="recent-title">
         RECENTLY WATCHED
       </h2>
-
 
       <div class="poster-grid">
 
@@ -1321,11 +1089,9 @@ function renderRecent() {
               movie => `
                 <img
                   class="grid-poster"
-
                   src="${escapeAttribute(
                     movie.poster
                   )}"
-
                   alt="${escapeAttribute(
                     stripTags(
                       movie.title ||
@@ -1343,16 +1109,13 @@ function renderRecent() {
 
     </section>
   `;
-
 }
 
 
 function renderYearRecap(
   year
 ) {
-
   setBackgroundImage("");
-
 
   const movies =
     (
@@ -1366,21 +1129,16 @@ function renderYearRecap(
         8
       );
 
-
   if (!movies.length) {
-
     renderEmpty(
       `No movies found for ${year}.`
     );
 
     return;
-
   }
-
 
   slideRoot.innerHTML = `
     <section class="year-slide">
-
 
       <div class="year-heading">
 
@@ -1388,20 +1146,17 @@ function renderYearRecap(
           YEAR RECAP
         </div>
 
-
         <h1 class="year-number">
           ${escapeHTML(
             year
           )}
         </h1>
 
-
         <div class="year-subtitle">
           HENRY'S RANKING
         </div>
 
       </div>
-
 
       <div class="year-poster-grid">
 
@@ -1420,15 +1175,12 @@ function renderYearRecap(
                     ""
                   );
 
-
                 const rank =
                   movie.position ||
                   index + 1;
 
-
                 return `
                   <div class="year-movie">
-
 
                     <div class="year-poster-wrap">
 
@@ -1437,11 +1189,9 @@ function renderYearRecap(
                           ? `
                             <img
                               class="year-poster"
-
                               src="${escapeAttribute(
                                 movie.poster
                               )}"
-
                               alt="${escapeAttribute(
                                 title
                               )}"
@@ -1456,7 +1206,6 @@ function renderYearRecap(
                           `
                       }
 
-
                       <div class="year-rank">
                         #${escapeHTML(
                           rank
@@ -1464,7 +1213,6 @@ function renderYearRecap(
                       </div>
 
                     </div>
-
 
                     <div class="year-movie-title">
                       ${escapeHTML(
@@ -1474,7 +1222,6 @@ function renderYearRecap(
 
                   </div>
                 `;
-
               }
             )
             .join("")
@@ -1484,16 +1231,13 @@ function renderYearRecap(
 
     </section>
   `;
-
 }
 
 
 function renderEmpty(
   message
 ) {
-
   setBackgroundImage("");
-
 
   slideRoot.innerHTML = `
     <section class="empty-slide">
@@ -1506,14 +1250,12 @@ function renderEmpty(
 
     </section>
   `;
-
 }
 
 
 function setBackgroundImage(
   url
 ) {
-
   backgroundImage
     .style
     .backgroundImage =
@@ -1525,47 +1267,38 @@ function setBackgroundImage(
             "%22"
           )}")`
         : "none";
-
 }
 
 
 function makeStars(
   rating
 ) {
-
   if (
     rating === null ||
     rating === undefined ||
     rating === ""
   ) {
-
     return "";
-
   }
-
 
   const value =
     Number(rating);
-
 
   if (
     !Number.isFinite(
       value
     )
   ) {
-
     return "";
-
   }
 
-
   const full =
-    Math.floor(value);
-
+    Math.floor(
+      value
+    );
 
   const half =
     value % 1 >= 0.5;
-
 
   return (
     "★".repeat(full) +
@@ -1575,39 +1308,30 @@ function makeStars(
         : ""
     )
   );
-
 }
 
 
 function formatDate(
   dateString
 ) {
-
   if (!dateString) {
-
     return "";
-
   }
-
 
   const date =
     new Date(
       `${dateString}T12:00:00`
     );
 
-
   if (
     Number.isNaN(
       date.getTime()
     )
   ) {
-
     return stripTags(
       dateString
     );
-
   }
-
 
   return date
     .toLocaleDateString(
@@ -1618,29 +1342,21 @@ function formatDate(
         year: "numeric"
       }
     );
-
 }
 
 
 function updateLastUpdated() {
-
   if (!lastUpdatedElement) {
-
     return;
-
   }
 
-
   if (!lastUpdatedAt) {
-
     lastUpdatedElement
       .textContent =
         "Last updated: —";
 
     return;
-
   }
-
 
   lastUpdatedElement
     .textContent =
@@ -1654,14 +1370,12 @@ function updateLastUpdated() {
           minute: "2-digit"
         }
       )}`;
-
 }
 
 
 function escapeHTML(
   value = ""
 ) {
-
   return String(value)
     .replace(
       /&/g,
@@ -1683,23 +1397,19 @@ function escapeHTML(
       /'/g,
       "&#039;"
     );
-
 }
 
 
 function escapeAttribute(
   value = ""
 ) {
-
   return escapeHTML(
     value
   );
-
 }
 
 
 function togglePause() {
-
   if (
     settingsPanel &&
     !settingsPanel
@@ -1708,40 +1418,29 @@ function togglePause() {
         "hidden"
       )
   ) {
-
     return;
-
   }
-
 
   paused =
     !paused;
-
 
   clearTimeout(
     slideTimer
   );
 
-
   if (paused) {
-
     showPlayStateIcon(
       "⏸",
       false
     );
-
   } else {
-
     showPlayStateIcon(
       "▶",
       true
     );
 
-
     scheduleNextSlide();
-
   }
-
 }
 
 
@@ -1749,23 +1448,17 @@ function showPlayStateIcon(
   icon,
   autoHide
 ) {
-
   if (!playStateIcon) {
-
     return;
-
   }
-
 
   clearTimeout(
     iconTimer
   );
 
-
   playStateIcon
     .textContent =
       icon;
-
 
   playStateIcon
     .classList
@@ -1773,48 +1466,36 @@ function showPlayStateIcon(
       "hidden"
     );
 
-
   if (autoHide) {
-
     iconTimer =
       setTimeout(
         () => {
-
           playStateIcon
             .classList
             .add(
               "hidden"
             );
-
         },
         1800
       );
-
   }
-
 }
 
 
 function openSettings() {
-
   clearTimeout(
     slideTimer
   );
 
-
   if (!settingsPanel) {
-
     return;
-
   }
-
 
   settingsPanel
     .classList
     .remove(
       "hidden"
     );
-
 
   settingsPanel.style.display =
     "flex";
@@ -1828,20 +1509,14 @@ function openSettings() {
   settingsPanel.style.zIndex =
     "2147483647";
 
-
   populateSettingsUI();
-
 }
 
 
 function closeSettings() {
-
   if (!settingsPanel) {
-
     return;
-
   }
-
 
   settingsPanel
     .classList
@@ -1849,29 +1524,22 @@ function closeSettings() {
       "hidden"
     );
 
-
   settingsPanel.style.display =
     "none";
 
-
   if (!paused) {
-
     scheduleNextSlide();
-
   }
-
 }
 
 
 function populateSettingsUI() {
-
   document
     .querySelectorAll(
       "[data-mode]"
     )
     .forEach(
       checkbox => {
-
         checkbox.checked =
           !!settings
             .modes[
@@ -1879,97 +1547,71 @@ function populateSettingsUI() {
                 .dataset
                 .mode
             ];
-
       }
     );
-
 
   if (
     backgroundColor1Input
   ) {
-
     backgroundColor1Input.value =
       settings.backgroundColor1;
-
   }
-
 
   if (
     backgroundColor1Value
   ) {
-
     backgroundColor1Value.textContent =
       settings
         .backgroundColor1
         .toUpperCase();
-
   }
-
 
   if (
     backgroundColor2Input
   ) {
-
     backgroundColor2Input.value =
       settings.backgroundColor2;
-
   }
-
 
   if (
     backgroundColor2Value
   ) {
-
     backgroundColor2Value.textContent =
       settings
         .backgroundColor2
         .toUpperCase();
-
   }
-
 
   if (
     brightnessSlider
   ) {
-
     brightnessSlider.value =
       settings.brightness;
-
   }
-
 
   if (
     brightnessValue
   ) {
-
     brightnessValue.textContent =
       `${settings.brightness}%`;
-
   }
-
 
   if (
     slideDuration
   ) {
-
     slideDuration.value =
       String(
         settings.slideDuration
       );
-
   }
 
-
   updateLastUpdated();
-
 }
 
 
 function readSettingsFromUI() {
-
   const modes =
     {};
-
 
   document
     .querySelectorAll(
@@ -1977,18 +1619,14 @@ function readSettingsFromUI() {
     )
     .forEach(
       checkbox => {
-
         modes[
           checkbox.dataset.mode
         ] =
           checkbox.checked;
-
       }
     );
 
-
   settings = {
-
     modes,
 
     backgroundColor1:
@@ -2014,39 +1652,30 @@ function readSettingsFromUI() {
             slideDuration.value
           )
         : settings.slideDuration
-
   };
-
 
   top100SequenceIndex =
     0;
 
-
   saveSettings();
-
 
   applyVisualSettings();
 
-
   buildSlideQueue();
 
-
   showSlide(0);
-
 }
 
 
 function hexLuminance(
   hex
 ) {
-
   const clean =
     String(hex)
       .replace(
         "#",
         ""
       );
-
 
   const r =
     parseInt(
@@ -2057,7 +1686,6 @@ function hexLuminance(
       16
     );
 
-
   const g =
     parseInt(
       clean.substring(
@@ -2066,7 +1694,6 @@ function hexLuminance(
       ),
       16
     );
-
 
   const b =
     parseInt(
@@ -2077,13 +1704,11 @@ function hexLuminance(
       16
     );
 
-
   return (
     0.299 * r +
     0.587 * g +
     0.114 * b
   );
-
 }
 
 
@@ -2091,7 +1716,6 @@ function getGradientTextColor(
   color1,
   color2
 ) {
-
   const average =
     (
       hexLuminance(
@@ -2102,22 +1726,18 @@ function getGradientTextColor(
       )
     ) / 2;
 
-
   return average > 160
     ? "#111111"
     : "#ffffff";
-
 }
 
 
 function applyVisualSettings() {
-
   const textColor =
     getGradientTextColor(
       settings.backgroundColor1,
       settings.backgroundColor2
     );
-
 
   document.documentElement
     .style
@@ -2126,14 +1746,12 @@ function applyVisualSettings() {
       settings.backgroundColor1
     );
 
-
   document.documentElement
     .style
     .setProperty(
       "--frame-background-2",
       settings.backgroundColor2
     );
-
 
   document.documentElement
     .style
@@ -2142,7 +1760,6 @@ function applyVisualSettings() {
       textColor
     );
 
-
   document.documentElement
     .style
     .setProperty(
@@ -2150,23 +1767,19 @@ function applyVisualSettings() {
       settings.brightness /
       100
     );
-
 }
 
 
 function previewGradient() {
-
   const color1 =
     backgroundColor1Input
       ?.value ||
     settings.backgroundColor1;
 
-
   const color2 =
     backgroundColor2Input
       ?.value ||
     settings.backgroundColor2;
-
 
   document.documentElement
     .style
@@ -2175,14 +1788,12 @@ function previewGradient() {
       color1
     );
 
-
   document.documentElement
     .style
     .setProperty(
       "--frame-background-2",
       color2
     );
-
 
   document.documentElement
     .style
@@ -2193,7 +1804,6 @@ function previewGradient() {
         color2
       )
     );
-
 }
 
 
@@ -2201,15 +1811,12 @@ backgroundColor1Input
   ?.addEventListener(
     "input",
     () => {
-
       backgroundColor1Value.textContent =
         backgroundColor1Input
           .value
           .toUpperCase();
 
-
       previewGradient();
-
     }
   );
 
@@ -2218,15 +1825,12 @@ backgroundColor2Input
   ?.addEventListener(
     "input",
     () => {
-
       backgroundColor2Value.textContent =
         backgroundColor2Input
           .value
           .toUpperCase();
 
-
       previewGradient();
-
     }
   );
 
@@ -2235,10 +1839,8 @@ brightnessSlider
   ?.addEventListener(
     "input",
     () => {
-
       brightnessValue.textContent =
         `${brightnessSlider.value}%`;
-
 
       document.documentElement
         .style
@@ -2249,7 +1851,6 @@ brightnessSlider
           ) /
           100
         );
-
     }
   );
 
@@ -2261,11 +1862,9 @@ document
   ?.addEventListener(
     "click",
     () => {
-
       readSettingsFromUI();
 
       closeSettings();
-
     }
   );
 
@@ -2287,31 +1886,23 @@ document
   ?.addEventListener(
     "click",
     () => {
-
       settings =
         cloneSettings(
           DEFAULT_SETTINGS
         );
 
-
       top100SequenceIndex =
         0;
 
-
       saveSettings();
-
 
       applyVisualSettings();
 
-
       populateSettingsUI();
-
 
       buildSlideQueue();
 
-
       showSlide(0);
-
     }
   );
 
@@ -2319,7 +1910,6 @@ document
 function handleSettingsTouch(
   event
 ) {
-
   if (
     settingsPanel &&
     !settingsPanel
@@ -2328,24 +1918,18 @@ function handleSettingsTouch(
         "hidden"
       )
   ) {
-
     return;
-
   }
-
 
   event.preventDefault();
 
   event.stopPropagation();
 
-
   openSettings();
-
 }
 
 
 if (settingsHotspot) {
-
   settingsHotspot
     .addEventListener(
       "touchstart",
@@ -2355,14 +1939,12 @@ if (settingsHotspot) {
       }
     );
 
-
   settingsHotspot
     .addEventListener(
       "pointerdown",
       handleSettingsTouch,
       true
     );
-
 
   settingsHotspot
     .addEventListener(
@@ -2371,19 +1953,15 @@ if (settingsHotspot) {
       true
     );
 
-
   settingsHotspot
     .addEventListener(
       "click",
       event => {
-
         event.preventDefault();
 
         event.stopPropagation();
-
       }
     );
-
 }
 
 
@@ -2394,19 +1972,14 @@ document
   ?.addEventListener(
     "click",
     event => {
-
       if (
         event.target ===
         settingsHotspot
       ) {
-
         return;
-
       }
 
-
       togglePause();
-
     }
   );
 
