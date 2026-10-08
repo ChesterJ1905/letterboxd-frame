@@ -1,322 +1,535 @@
 import fs from "node:fs/promises";
 
-const DATA_PATH = "./data/letterboxd-export.json";
-const CONCURRENCY = 3;
+const DATA_PATH =
+  "./data/letterboxd-export.json";
+
+const TMDB_API_KEY =
+  process.env.TMDB_API_KEY;
+
+const CONCURRENCY = 4;
+const DELAY_MS = 250;
 const SAVE_EVERY = 25;
-const DELAY_MS = 500;
+
+if (!TMDB_API_KEY) {
+  console.error(
+    "Missing TMDB_API_KEY"
+  );
+
+  console.error(
+    "Run with: set TMDB_API_KEY=your_key_here"
+  );
+
+  process.exit(1);
+}
+
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise(
+    resolve =>
+      setTimeout(
+        resolve,
+        ms
+      )
+  );
 }
 
-function decodeHTML(text = "") {
-  return String(text)
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">");
-}
-
-function getLargestFromSrcset(srcset = "") {
-  const entries = srcset
-    .split(",")
-    .map(part => part.trim())
-    .filter(Boolean);
-
-  if (!entries.length) return "";
-
-  const parsed = entries.map(entry => {
-    const parts = entry.split(/\s+/);
-
-    return {
-      url: parts[0],
-      size: parseInt(parts[1]) || 0
-    };
-  });
-
-  parsed.sort((a, b) => b.size - a.size);
-
-  return parsed[0]?.url || "";
-}
-
-function getPosterFromHTML(html = "") {
-  const decoded = decodeHTML(html);
-
-  const srcsetMatches = [
-    ...decoded.matchAll(/srcset=["']([^"']+)["']/gi)
-  ];
-
-  for (const match of srcsetMatches) {
-    const candidate = getLargestFromSrcset(match[1]);
-
-    if (
-      candidate &&
-      !candidate.includes("empty-poster") &&
-      !candidate.includes("logo") &&
-      !candidate.includes("avatar")
-    ) {
-      return candidate;
-    }
-  }
-
-  const ogPatterns = [
-    /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,
-    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i
-  ];
-
-  for (const pattern of ogPatterns) {
-    const match = decoded.match(pattern);
-
-    if (
-      match &&
-      match[1] &&
-      !match[1].includes("empty-poster") &&
-      !match[1].includes("logo")
-    ) {
-      return match[1];
-    }
-  }
-
-  const imgMatches = [
-    ...decoded.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)
-  ];
-
-  for (const match of imgMatches) {
-    const candidate = match[1];
-
-    if (
-      candidate &&
-      !candidate.includes("empty-poster") &&
-      !candidate.includes("logo") &&
-      !candidate.includes("avatar")
-    ) {
-      return candidate;
-    }
-  }
-
-  return "";
-}
-
-async function isImageWorking(url) {
-  if (!url) return false;
-
-  try {
-    const response = await fetch(url, {
-      method: "HEAD",
-      redirect: "follow",
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-      }
-    });
-
-    if (!response.ok) {
-      return false;
-    }
-
-    const type =
-      response.headers.get("content-type") || "";
-
-    return type.startsWith("image/");
-  } catch {
-    return false;
-  }
-}
-
-async function fetchHTML(url) {
-  const response = await fetch(url, {
-    redirect: "follow",
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) LetterboxdFrame/1.0",
-      Accept:
-        "text/html,application/xhtml+xml"
-    }
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
-  }
-
-  return {
-    html: await response.text(),
-    finalUrl: response.url
-  };
-}
-
-async function findPoster(movie) {
-  const pagesToTry = [];
-
-  if (movie.filmUrl) {
-    pagesToTry.push(movie.filmUrl);
-  }
-
-  for (const url of pagesToTry) {
-    try {
-      const { html, finalUrl } =
-        await fetchHTML(url);
-
-      let poster =
-        getPosterFromHTML(html);
-
-      if (poster && await isImageWorking(poster)) {
-        return poster;
-      }
-
-      const posterPage =
-        `${finalUrl.replace(/\/+$/, "")}/poster/`;
-
-      try {
-        const posterPageResult =
-          await fetchHTML(posterPage);
-
-        poster =
-          getPosterFromHTML(
-            posterPageResult.html
-          );
-
-        if (
-          poster &&
-          await isImageWorking(poster)
-        ) {
-          return poster;
-        }
-      } catch {}
-    } catch {}
-  }
-
-  return "";
-}
 
 async function saveData(data) {
   await fs.writeFile(
     DATA_PATH,
-    JSON.stringify(data, null, 2),
+    JSON.stringify(
+      data,
+      null,
+      2
+    ),
     "utf8"
   );
 }
 
+
+function normalizeTitle(
+  value = ""
+) {
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(
+      /['’]/g,
+      ""
+    )
+    .replace(
+      /[^a-z0-9]+/g,
+      " "
+    )
+    .trim();
+}
+
+
+async function tmdbFetch(url) {
+  const separator =
+    url.includes("?")
+      ? "&"
+      : "?";
+
+  const finalUrl =
+    `${url}${separator}api_key=${encodeURIComponent(
+      TMDB_API_KEY
+    )}`;
+
+  const response =
+    await fetch(finalUrl, {
+      headers: {
+        accept:
+          "application/json"
+      }
+    });
+
+  if (!response.ok) {
+    throw new Error(
+      `TMDb HTTP ${response.status}`
+    );
+  }
+
+  return response.json();
+}
+
+
+async function searchMovie(
+  title,
+  year
+) {
+  const params =
+    new URLSearchParams({
+      query:
+        title,
+      include_adult:
+        "false",
+      language:
+        "en-US"
+    });
+
+  if (year) {
+    params.set(
+      "year",
+      String(year)
+    );
+  }
+
+  const url =
+    `https://api.themoviedb.org/3/search/movie?${params.toString()}`;
+
+  const data =
+    await tmdbFetch(url);
+
+  return (
+    data.results ||
+    []
+  );
+}
+
+
+function chooseBestMatch(
+  results,
+  title,
+  year
+) {
+  if (!results.length) {
+    return null;
+  }
+
+  const normalizedTarget =
+    normalizeTitle(title);
+
+  const targetYear =
+    Number(year);
+
+  let best =
+    null;
+
+  let bestScore =
+    -Infinity;
+
+  for (
+    const result
+    of results
+  ) {
+    const resultTitle =
+      normalizeTitle(
+        result.title ||
+        result.original_title ||
+        ""
+      );
+
+    const releaseYear =
+      result.release_date
+        ? Number(
+            result.release_date
+              .slice(
+                0,
+                4
+              )
+          )
+        : null;
+
+    let score = 0;
+
+    if (
+      resultTitle ===
+      normalizedTarget
+    ) {
+      score += 100;
+    }
+
+    if (
+      targetYear &&
+      releaseYear ===
+      targetYear
+    ) {
+      score += 50;
+    }
+
+    if (
+      targetYear &&
+      releaseYear &&
+      Math.abs(
+        releaseYear -
+        targetYear
+      ) === 1
+    ) {
+      score += 10;
+    }
+
+    if (
+      result.poster_path
+    ) {
+      score += 20;
+    }
+
+    score +=
+      Number(
+        result.popularity ||
+        0
+      ) / 100;
+
+    if (
+      score >
+      bestScore
+    ) {
+      bestScore =
+        score;
+
+      best =
+        result;
+    }
+  }
+
+  return best;
+}
+
+
+async function getPosterForMovie(
+  movie
+) {
+  const title =
+    movie.name ||
+    movie.title ||
+    "";
+
+  const year =
+    movie.year ||
+    "";
+
+  let results =
+    await searchMovie(
+      title,
+      year
+    );
+
+  let best =
+    chooseBestMatch(
+      results,
+      title,
+      year
+    );
+
+  if (
+    !best ||
+    !best.poster_path
+  ) {
+    results =
+      await searchMovie(
+        title,
+        null
+      );
+
+    best =
+      chooseBestMatch(
+        results,
+        title,
+        year
+      );
+  }
+
+  if (
+    !best ||
+    !best.poster_path
+  ) {
+    return null;
+  }
+
+  return {
+    poster:
+      `https://image.tmdb.org/t/p/w780${best.poster_path}`,
+
+    tmdbId:
+      best.id,
+
+    matchedTitle:
+      best.title,
+
+    matchedYear:
+      best.release_date
+        ? best.release_date.slice(
+            0,
+            4
+          )
+        : null
+  };
+}
+
+
 async function main() {
   const raw =
-    await fs.readFile(DATA_PATH, "utf8");
+    await fs.readFile(
+      DATA_PATH,
+      "utf8"
+    );
 
   const data =
     JSON.parse(raw);
 
   console.log(
-    `Checking ${data.movies.length} movies...`
+    `Replacing posters for ${data.movies.length} movies using TMDb...`
   );
 
+  let nextIndex = 0;
   let processed = 0;
   let fixed = 0;
-  let kept = 0;
   let missing = 0;
 
-  let nextIndex = 0;
 
   async function worker() {
     while (true) {
-      const index = nextIndex++;
+      const index =
+        nextIndex++;
 
-      if (index >= data.movies.length) {
+      if (
+        index >=
+        data.movies.length
+      ) {
         return;
       }
 
       const movie =
-        data.movies[index];
+        data.movies[
+          index
+        ];
 
-      let currentWorks = false;
+      const title =
+        movie.name ||
+        movie.title ||
+        "Unknown";
 
-      if (movie.poster) {
-        currentWorks =
-          await isImageWorking(movie.poster);
-      }
-
-      if (currentWorks) {
-        kept++;
-
-        console.log(
-          `[${index + 1}/${data.movies.length}] KEEP ${movie.name}`
-        );
-      } else {
-        if (movie.poster) {
-          console.log(
-            `[${index + 1}/${data.movies.length}] BAD  ${movie.name} - retrying`
+      try {
+        const result =
+          await getPosterForMovie(
+            movie
           );
-        } else {
-          console.log(
-            `[${index + 1}/${data.movies.length}] MISS ${movie.name} - retrying`
-          );
-        }
 
-        const poster =
-          await findPoster(movie);
+        if (
+          result?.poster
+        ) {
+          movie.poster =
+            result.poster;
 
-        if (poster) {
-          movie.poster = poster;
+          movie.tmdbId =
+            result.tmdbId;
+
           fixed++;
 
           console.log(
-            `[${index + 1}/${data.movies.length}] FIX  ${movie.name}`
+            `[${index + 1}/${data.movies.length}] OK   ${title} -> ${result.matchedTitle} (${result.matchedYear || "?"})`
           );
         } else {
           missing++;
 
           console.log(
-            `[${index + 1}/${data.movies.length}] NONE ${movie.name}`
+            `[${index + 1}/${data.movies.length}] NONE ${title}`
           );
         }
+
+      } catch (error) {
+        missing++;
+
+        console.log(
+          `[${index + 1}/${data.movies.length}] FAIL ${title}: ${error.message}`
+        );
       }
 
       processed++;
 
       if (
-        processed % SAVE_EVERY === 0
+        processed %
+        SAVE_EVERY ===
+        0
       ) {
-        await saveData(data);
+        await saveData(
+          data
+        );
 
         console.log(
           `Saved progress: ${processed}/${data.movies.length}`
         );
       }
 
-      await sleep(DELAY_MS);
+      await sleep(
+        DELAY_MS
+      );
     }
   }
 
+
   await Promise.all(
     Array.from(
-      { length: CONCURRENCY },
-      () => worker()
+      {
+        length:
+          CONCURRENCY
+      },
+      () =>
+        worker()
     )
   );
 
-  await saveData(data);
 
-  const totalWithPosters =
-    data.movies.filter(
-      movie => movie.poster
-    ).length;
+  const posterMap =
+    new Map();
+
+  for (
+    const movie
+    of data.movies
+  ) {
+    if (
+      movie.poster
+    ) {
+      const key =
+        `${normalizeTitle(
+          movie.name ||
+          movie.title
+        )}||${movie.year}`;
+
+      posterMap.set(
+        key,
+        movie.poster
+      );
+    }
+  }
+
+
+  function updateList(
+    list
+  ) {
+    if (
+      !list?.items
+    ) {
+      return;
+    }
+
+    for (
+      const item
+      of list.items
+    ) {
+      const key =
+        `${normalizeTitle(
+          item.name ||
+          item.title
+        )}||${item.year}`;
+
+      const poster =
+        posterMap.get(
+          key
+        );
+
+      if (poster) {
+        item.poster =
+          poster;
+      }
+    }
+  }
+
+
+  for (
+    const list
+    of Object.values(
+      data.yearLists ||
+      {}
+    )
+  ) {
+    updateList(
+      list
+    );
+  }
+
+
+  if (
+    data.top100
+  ) {
+    updateList(
+      data.top100
+    );
+  }
+
+
+  if (
+    Array.isArray(
+      data.lists
+    )
+  ) {
+    for (
+      const list
+      of data.lists
+    ) {
+      updateList(
+        list
+      );
+    }
+  }
+
+
+  await saveData(
+    data
+  );
+
 
   console.log("");
   console.log("DONE");
   console.log(
-    `Kept: ${kept}`
-  );
-  console.log(
-    `Fixed: ${fixed}`
+    `Updated posters: ${fixed}`
   );
   console.log(
     `Still missing: ${missing}`
   );
-  console.log(
-    `${totalWithPosters}/${data.movies.length} movies have a saved poster URL.`
-  );
 }
 
-main().catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+
+main()
+  .catch(
+    error => {
+      console.error(
+        error
+      );
+
+      process.exit(
+        1
+      );
+    }
+  );
