@@ -1,8 +1,9 @@
 import fs from "node:fs/promises";
 
 const DATA_PATH = "./data/letterboxd-export.json";
-const CONCURRENCY = 5;
-const DELAY_MS = 250;
+const CONCURRENCY = 3;
+const SAVE_EVERY = 25;
+const DELAY_MS = 500;
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -18,220 +19,283 @@ function decodeHTML(text = "") {
     .replace(/&gt;/g, ">");
 }
 
-function getPosterFromHTML(html) {
-  const patterns = [
-    /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,
-    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i,
-    /<img[^>]+class=["'][^"']*image[^"']*["'][^>]+srcset=["']([^"']+)["']/i,
-    /srcset=["']([^"']+)["']/i
+function getLargestFromSrcset(srcset = "") {
+  const entries = srcset
+    .split(",")
+    .map(part => part.trim())
+    .filter(Boolean);
+
+  if (!entries.length) return "";
+
+  const parsed = entries.map(entry => {
+    const parts = entry.split(/\s+/);
+
+    return {
+      url: parts[0],
+      size: parseInt(parts[1]) || 0
+    };
+  });
+
+  parsed.sort((a, b) => b.size - a.size);
+
+  return parsed[0]?.url || "";
+}
+
+function getPosterFromHTML(html = "") {
+  const decoded = decodeHTML(html);
+
+  const srcsetMatches = [
+    ...decoded.matchAll(/srcset=["']([^"']+)["']/gi)
   ];
 
-  for (const pattern of patterns) {
-    const match = html.match(pattern);
-
-    if (!match) continue;
-
-    let value = decodeHTML(match[1]);
-
-    if (value.includes(",")) {
-      value = value.split(",")[0];
-    }
-
-    if (value.includes(" ")) {
-      value = value.trim().split(/\s+/)[0];
-    }
+  for (const match of srcsetMatches) {
+    const candidate = getLargestFromSrcset(match[1]);
 
     if (
-      value &&
-      !value.includes("empty-poster") &&
-      !value.includes("logo")
+      candidate &&
+      !candidate.includes("empty-poster") &&
+      !candidate.includes("logo") &&
+      !candidate.includes("avatar")
     ) {
-      return value;
+      return candidate;
+    }
+  }
+
+  const ogPatterns = [
+    /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i
+  ];
+
+  for (const pattern of ogPatterns) {
+    const match = decoded.match(pattern);
+
+    if (
+      match &&
+      match[1] &&
+      !match[1].includes("empty-poster") &&
+      !match[1].includes("logo")
+    ) {
+      return match[1];
+    }
+  }
+
+  const imgMatches = [
+    ...decoded.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)
+  ];
+
+  for (const match of imgMatches) {
+    const candidate = match[1];
+
+    if (
+      candidate &&
+      !candidate.includes("empty-poster") &&
+      !candidate.includes("logo") &&
+      !candidate.includes("avatar")
+    ) {
+      return candidate;
     }
   }
 
   return "";
 }
 
-async function resolveFilmURL(url) {
+async function isImageWorking(url) {
+  if (!url) return false;
+
+  try {
+    const response = await fetch(url, {
+      method: "HEAD",
+      redirect: "follow",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+      }
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const type =
+      response.headers.get("content-type") || "";
+
+    return type.startsWith("image/");
+  } catch {
+    return false;
+  }
+}
+
+async function fetchHTML(url) {
   const response = await fetch(url, {
     redirect: "follow",
     headers: {
       "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) LetterboxdFrame/1.0"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) LetterboxdFrame/1.0",
+      Accept:
+        "text/html,application/xhtml+xml"
     }
   });
 
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
   return {
-    url: response.url,
-    html: await response.text()
+    html: await response.text(),
+    finalUrl: response.url
   };
 }
 
-async function fetchPoster(movie, index, total) {
-  if (movie.poster) {
-    console.log(
-      `[${index + 1}/${total}] SKIP ${movie.name}`
-    );
+async function findPoster(movie) {
+  const pagesToTry = [];
 
-    return movie;
+  if (movie.filmUrl) {
+    pagesToTry.push(movie.filmUrl);
   }
 
-  try {
-    const { url, html } = await resolveFilmURL(movie.filmUrl);
+  for (const url of pagesToTry) {
+    try {
+      const { html, finalUrl } =
+        await fetchHTML(url);
 
-    let poster = getPosterFromHTML(html);
+      let poster =
+        getPosterFromHTML(html);
 
-    if (!poster) {
-      const posterURL =
-        url.replace(/\/?$/, "/poster/");
-
-      const posterResponse = await fetch(posterURL, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) LetterboxdFrame/1.0"
-        }
-      });
-
-      const posterHTML =
-        await posterResponse.text();
-
-      poster = getPosterFromHTML(posterHTML);
-    }
-
-    if (poster) {
-      console.log(
-        `[${index + 1}/${total}] OK   ${movie.name}`
-      );
-
-      return {
-        ...movie,
-        poster
-      };
-    }
-
-    console.log(
-      `[${index + 1}/${total}] NONE ${movie.name}`
-    );
-
-    return movie;
-  } catch (error) {
-    console.log(
-      `[${index + 1}/${total}] FAIL ${movie.name}: ${error.message}`
-    );
-
-    return movie;
-  } finally {
-    await sleep(DELAY_MS);
-  }
-}
-
-async function runPool(items, worker, concurrency) {
-  const results = new Array(items.length);
-  let nextIndex = 0;
-
-  async function runWorker() {
-    while (true) {
-      const index = nextIndex++;
-
-      if (index >= items.length) {
-        return;
+      if (poster && await isImageWorking(poster)) {
+        return poster;
       }
 
-      results[index] =
-        await worker(
-          items[index],
-          index,
-          items.length
-        );
-    }
+      const posterPage =
+        `${finalUrl.replace(/\/+$/, "")}/poster/`;
+
+      try {
+        const posterPageResult =
+          await fetchHTML(posterPage);
+
+        poster =
+          getPosterFromHTML(
+            posterPageResult.html
+          );
+
+        if (
+          poster &&
+          await isImageWorking(poster)
+        ) {
+          return poster;
+        }
+      } catch {}
+    } catch {}
   }
 
-  await Promise.all(
-    Array.from(
-      { length: concurrency },
-      () => runWorker()
-    )
-  );
+  return "";
+}
 
-  return results;
+async function saveData(data) {
+  await fs.writeFile(
+    DATA_PATH,
+    JSON.stringify(data, null, 2),
+    "utf8"
+  );
 }
 
 async function main() {
   const raw =
-    await fs.readFile(
-      DATA_PATH,
-      "utf8"
-    );
+    await fs.readFile(DATA_PATH, "utf8");
 
   const data =
     JSON.parse(raw);
 
   console.log(
-    `Loading posters for ${data.movies.length} movies...`
+    `Checking ${data.movies.length} movies...`
   );
 
-  data.movies =
-    await runPool(
-      data.movies,
-      fetchPoster,
-      CONCURRENCY
-    );
+  let processed = 0;
+  let fixed = 0;
+  let kept = 0;
+  let missing = 0;
 
-  const posterMap =
-    new Map();
+  let nextIndex = 0;
 
-  for (const movie of data.movies) {
-    if (movie.poster) {
-      posterMap.set(
-        `${movie.name.toLowerCase()}||${movie.year}`,
-        movie.poster
-      );
-    }
-  }
+  async function worker() {
+    while (true) {
+      const index = nextIndex++;
 
-  function addPostersToList(list) {
-    if (!list?.items) return;
-
-    for (const item of list.items) {
-      const key =
-        `${item.name.toLowerCase()}||${item.year}`;
-
-      const poster =
-        posterMap.get(key);
-
-      if (poster) {
-        item.poster = poster;
+      if (index >= data.movies.length) {
+        return;
       }
+
+      const movie =
+        data.movies[index];
+
+      let currentWorks = false;
+
+      if (movie.poster) {
+        currentWorks =
+          await isImageWorking(movie.poster);
+      }
+
+      if (currentWorks) {
+        kept++;
+
+        console.log(
+          `[${index + 1}/${data.movies.length}] KEEP ${movie.name}`
+        );
+      } else {
+        if (movie.poster) {
+          console.log(
+            `[${index + 1}/${data.movies.length}] BAD  ${movie.name} - retrying`
+          );
+        } else {
+          console.log(
+            `[${index + 1}/${data.movies.length}] MISS ${movie.name} - retrying`
+          );
+        }
+
+        const poster =
+          await findPoster(movie);
+
+        if (poster) {
+          movie.poster = poster;
+          fixed++;
+
+          console.log(
+            `[${index + 1}/${data.movies.length}] FIX  ${movie.name}`
+          );
+        } else {
+          missing++;
+
+          console.log(
+            `[${index + 1}/${data.movies.length}] NONE ${movie.name}`
+          );
+        }
+      }
+
+      processed++;
+
+      if (
+        processed % SAVE_EVERY === 0
+      ) {
+        await saveData(data);
+
+        console.log(
+          `Saved progress: ${processed}/${data.movies.length}`
+        );
+      }
+
+      await sleep(DELAY_MS);
     }
   }
 
-  for (const list of Object.values(
-    data.yearLists || {}
-  )) {
-    addPostersToList(list);
-  }
-
-  if (data.top100) {
-    addPostersToList(
-      data.top100
-    );
-  }
-
-  for (const list of data.lists || []) {
-    addPostersToList(list);
-  }
-
-  await fs.writeFile(
-    DATA_PATH,
-    JSON.stringify(
-      data,
-      null,
-      2
+  await Promise.all(
+    Array.from(
+      { length: CONCURRENCY },
+      () => worker()
     )
   );
 
-  const totalPosters =
+  await saveData(data);
+
+  const totalWithPosters =
     data.movies.filter(
       movie => movie.poster
     ).length;
@@ -239,7 +303,16 @@ async function main() {
   console.log("");
   console.log("DONE");
   console.log(
-    `${totalPosters}/${data.movies.length} movies now have posters.`
+    `Kept: ${kept}`
+  );
+  console.log(
+    `Fixed: ${fixed}`
+  );
+  console.log(
+    `Still missing: ${missing}`
+  );
+  console.log(
+    `${totalWithPosters}/${data.movies.length} movies have a saved poster URL.`
   );
 }
 
