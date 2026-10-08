@@ -280,9 +280,29 @@ function showSlide(index) {
   } else if (
     slide.type === "yearList"
   ) {
-    renderYearList(
-      slide.year
-    );
+    const cards = movies
+  .map((movie, index) => {
+    return `
+      <div class="year-movie-card">
+        <div class="year-poster-wrap">
+          <img
+            class="year-movie-poster"
+            src="${escapeHTML(movie.poster || "")}"
+            alt="${escapeHTML(movie.title || "")}"
+          >
+
+          <div class="year-rank">
+            #${movie.position || index + 1}
+          </div>
+        </div>
+
+        <div class="year-movie-title">
+          ${escapeHTML(movie.title || "")}
+        </div>
+      </div>
+    `;
+  })
+  .join("");
 
   } else {
     renderEmpty(

@@ -497,7 +497,61 @@ input {
 
   text-align: center;
 }
+.year-movie-card {
+  min-width: 0;
+  text-align: center;
+  color: var(--frame-text);
+}
 
+.year-poster-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.year-movie-poster {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.year-movie-title {
+  margin-top: 8px;
+  color: var(--frame-text);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.15;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.year-rank {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+
+  padding: 4px 8px;
+  border-radius: 8px;
+
+  background: color-mix(
+    in srgb,
+    var(--frame-background) 75%,
+    transparent
+  );
+
+  color: var(--frame-text);
+
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.year-list-title,
+.year-list-subtitle {
+  color: var(--frame-text);
+}
 .year-rank {
   position: absolute;
 
