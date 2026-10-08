@@ -616,11 +616,7 @@ select {
   position: relative;
 
   width: 100%;
-
-  height:
-    calc(
-      100% - 32px
-    );
+  height: calc(100% - 32px);
 
   min-height: 0;
 
@@ -631,18 +627,17 @@ select {
   background:
     color-mix(
       in srgb,
-      var(--frame-text) 7%,
+      var(--frame-text) 5%,
       transparent
     );
 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   box-shadow:
     0 10px 25px
-    rgba(
-      0,
-      0,
-      0,
-      .32
-    );
+    rgba(0, 0, 0, .32);
 }
 
 
@@ -652,13 +647,11 @@ select {
 
   display: block;
 
-  object-fit: cover;
-
+  object-fit: contain;
   object-position: center;
 
   border-radius: 12px;
 }
-
 
 .year-poster-empty {
   display: flex;
