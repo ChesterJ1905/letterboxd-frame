@@ -1,4 +1,4 @@
-const BUILD_NUMBER = "1.05";
+const BUILD_NUMBER = "1.06";
 
 const DEFAULT_SETTINGS = {
   modes: {
@@ -141,6 +141,61 @@ function saveSettings() {
 }
 
 
+/* ========================================
+   REAL MOVIE FILTER
+======================================== */
+
+function isRealMovie(movie) {
+  if (
+    !movie ||
+    typeof movie !== "object"
+  ) {
+    return false;
+  }
+
+  if (
+    Array.isArray(movie.items)
+  ) {
+    return false;
+  }
+
+  const title =
+    String(
+      movie.title ||
+      movie.name ||
+      ""
+    ).trim();
+
+  if (!title) {
+    return false;
+  }
+
+  const year =
+    Number(movie.year);
+
+  if (
+    !Number.isInteger(year) ||
+    year < 1880 ||
+    year > 2100
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+
+function getRealMovies() {
+  return (
+    data?.movies || []
+  ).filter(isRealMovie);
+}
+
+
+/* ========================================
+   SLIDE QUEUE
+======================================== */
+
 function buildSlideQueue() {
   slideQueue = [];
 
@@ -148,9 +203,12 @@ function buildSlideQueue() {
     return;
   }
 
+  const movies =
+    getRealMovies();
+
   if (
     settings.modes.latest &&
-    data.latest
+    isRealMovie(data.latest)
   ) {
     slideQueue.push({
       type: "movie",
@@ -161,7 +219,7 @@ function buildSlideQueue() {
 
   if (
     settings.modes.random &&
-    data.movies?.length
+    movies.length
   ) {
     slideQueue.push({
       type: "random"
@@ -180,9 +238,14 @@ function buildSlideQueue() {
     settings.modes.topRated &&
     data.topRated?.length
   ) {
+    const realTopRated =
+      data.topRated
+        .filter(isRealMovie)
+        .slice(0, 5);
+
     for (
       const movie of
-      data.topRated.slice(0, 5)
+      realTopRated
     ) {
       slideQueue.push({
         type: "movie",
@@ -194,7 +257,7 @@ function buildSlideQueue() {
 
   if (
     settings.modes.recent &&
-    data.movies?.length
+    movies.length
   ) {
     slideQueue.push({
       type: "recent"
@@ -325,34 +388,62 @@ function scheduleNextSlide() {
 }
 
 
+/* ========================================
+   RANDOM WATCH
+======================================== */
+
 function pickRandomMovie() {
   const movies =
-    data?.movies || [];
+    getRealMovies();
 
   if (!movies.length) {
     return null;
   }
 
-  return movies[
-    Math.floor(
-      Math.random() *
-      movies.length
-    )
-  ];
+  const movie =
+    movies[
+      Math.floor(
+        Math.random() *
+        movies.length
+      )
+    ];
+
+  console.log(
+    "Random movie:",
+    movie.title,
+    movie.year
+  );
+
+  return movie;
 }
 
+
+/* ========================================
+   MOVIE SLIDE
+======================================== */
 
 function renderMovie(
   movie,
   label
 ) {
-  if (!movie) {
+  if (
+    !movie ||
+    !isRealMovie(movie)
+  ) {
     renderEmpty(
       "No movie available."
     );
 
     return;
   }
+
+  const title =
+    movie.title ||
+    movie.name ||
+    "";
+
+  const year =
+    movie.year || "";
 
   setBackgroundImage(
     movie.poster
@@ -378,7 +469,7 @@ function renderMovie(
             movie.poster
           )}"
           alt="${escapeAttribute(
-            movie.title || ""
+            title
           )}"
         >
       `
@@ -398,15 +489,11 @@ function renderMovie(
         </p>
 
         <h1 class="movie-title">
-          ${escapeHTML(
-            movie.title || ""
-          )}
+          ${escapeHTML(title)}
         </h1>
 
         <div class="movie-year">
-          ${escapeHTML(
-            movie.year || ""
-          )}
+          ${escapeHTML(year)}
         </div>
 
         <div class="movie-rating">
@@ -433,6 +520,10 @@ function renderMovie(
   `;
 }
 
+
+/* ========================================
+   FACTS
+======================================== */
 
 function renderFacts() {
   setBackgroundImage("");
@@ -496,11 +587,15 @@ function renderFacts() {
 }
 
 
+/* ========================================
+   RECENT
+======================================== */
+
 function renderRecent() {
   setBackgroundImage("");
 
   const movies =
-    [...(data?.movies || [])]
+    getRealMovies()
       .filter(
         movie =>
           movie.poster
@@ -557,11 +652,16 @@ function renderRecent() {
 }
 
 
+/* ========================================
+   FAVORITES
+======================================== */
+
 function renderFavorites() {
   setBackgroundImage("");
 
   const favorites =
-    data?.favorites || [];
+    (data?.favorites || [])
+      .filter(isRealMovie);
 
   if (!favorites.length) {
     renderEmpty(
@@ -607,6 +707,10 @@ function renderFavorites() {
   `;
 }
 
+
+/* ========================================
+   YEAR LIST
+======================================== */
 
 function renderYearList(year) {
   setBackgroundImage("");
@@ -723,6 +827,10 @@ function renderYearList(year) {
 }
 
 
+/* ========================================
+   EMPTY / ERROR
+======================================== */
+
 function renderEmpty(message) {
   setBackgroundImage("");
 
@@ -745,6 +853,10 @@ function showError(message) {
 }
 
 
+/* ========================================
+   BACKGROUND
+======================================== */
+
 function setBackgroundImage(url) {
   if (!url) {
     backgroundImage.style.backgroundImage =
@@ -757,6 +869,10 @@ function setBackgroundImage(url) {
     `url("${url}")`;
 }
 
+
+/* ========================================
+   FORMATTERS
+======================================== */
 
 function makeStars(rating) {
   if (
@@ -847,6 +963,10 @@ function escapeAttribute(value = "") {
 }
 
 
+/* ========================================
+   PAUSE
+======================================== */
+
 function togglePause() {
   if (
     settingsPanel &&
@@ -912,6 +1032,10 @@ function showPlayStateIcon(
   }
 }
 
+
+/* ========================================
+   SETTINGS
+======================================== */
 
 function openSettings() {
   clearTimeout(
@@ -1136,6 +1260,10 @@ function applyVisualSettings() {
 }
 
 
+/* ========================================
+   SETTINGS EVENTS
+======================================== */
+
 if (
   backgroundColorInput
 ) {
@@ -1263,6 +1391,10 @@ if (
 }
 
 
+/* ========================================
+   SECRET SETTINGS HOTSPOT
+======================================== */
+
 function handleSettingsTouch(
   event
 ) {
@@ -1318,6 +1450,10 @@ if (
     );
 }
 
+
+/* ========================================
+   DISPLAY TAP
+======================================== */
 
 const display =
   document.getElementById(
